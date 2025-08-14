@@ -7,6 +7,7 @@
 using namespace std;
 
 int main(int argc, char **argv){
+	cout << "[" << getpid() << "] will start searching!\n";
 	if(argc != 5){
 		cout <<"usage: ./partitioner.out <path-to-file> <pattern> <search-start-position> <search-end-position>\nprovided arguments:\n";
 		for(int i = 0; i < argc; i++)
@@ -36,13 +37,13 @@ int main(int argc, char **argv){
 				break;
 			}
 			if(j == patt.length()-1 && patt[j] == s[i+j]){
-				cout << getpid() << " found at " << i << "\n";
+				cout << "[" << getpid() << "] found at " << i << "\n";
 				return 0;
 			}
 		}
 	}
 	
-	cout << getpid() << " didn't find\n";
+	cout << "[" << getpid() << "] didn't find\n";
 	return 0;
 }
 

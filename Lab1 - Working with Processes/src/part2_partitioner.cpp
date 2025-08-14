@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <signal.h>
-#include <string>
+#include <string.h>
 
 using namespace std;
 
@@ -11,7 +11,7 @@ int main(int argc, char **argv)
 {
 	if(argc != 6)
 	{
-		cout <<"usage: ./partitioner.out <path-to-file> <pattern> <search-start-position> <search-end-position> <max-chunk-size>\nprovided arguments:\n";
+		cout << getpid() << " usage: ./partitioner.out <path-to-file> <pattern> <search-start-position> <search-end-position> <max-chunk-size>\nprovided arguments:\n";
 		for(int i = 0; i < argc; i++)
 			cout << argv[i] << "\n";
 		return -1;
@@ -40,27 +40,48 @@ int main(int argc, char **argv)
 	if(length > max_chunk_size)  //split into two processes
 	{
 		pid_t lpid = fork(), rpid;
-		cout << "[" << my_pid << "] forked left child " << lpid << "\n";
 
 		if(lpid == 0) {
 			//exec part2_partitioner with first half
 			//./partitioner.out <path-to-file> <pattern> <search-start-position> <search-end-position> <max-chunk-size>
 
-			argv[4] = to_string(search_start_position + length/2).data();
-			argv = (char**)realloc(argv, 7*sizeof(char*));
-			argv[6] = NULL;
-			execv(argv[0], argv);
+			//argv[4] = to_string(search_start_position + length/2).data();
+			//argv = (char**)realloc(argv, 7*sizeof(char*));
+			//argv[6] = NULL;
+			cout << "[" << my_pid << "] is calling part2\n";
+			char*args[7];
+		       	args[0] = strdup("./part2.out");
+			args[1] = strdup("./file.txt");
+			args[2] = pattern_to_search_for;
+			args[3] = to_string(search_start_position).data();
+			args[4] = to_string(search_start_position+length/2).data();
+			args[5] = to_string(max_chunk_size).data();
+			args[6] = NULL;
+			execv(args[0], args);
 		} else{
+			cout << "[" << my_pid << "] forked left child " << lpid << "\n";
+			
 			rpid = fork();
-			cout << "[" << my_pid << "] forked right child " << rpid << "\n";
 
 			if(rpid == 0){
 				//exec part2_partitioner with second half
-				argv[3] = to_string(search_start_position + length/2 + 1).data();
-				argv = (char**)realloc(argv, 7*sizeof(char*));
-				argv[6] = NULL;
-				execv(argv[0], argv);
+				//argv[3] = to_string(search_start_position + length/2 + 1).data();
+				//argv = (char**)realloc(argv, 7*sizeof(char*));
+				//argv[6] = NULL;
+				//execv(argv[0], argv);
+				cout << "[" << my_pid << "] is calling part2\n";
+				char*args[7];
+		       		args[0] = strdup("./part2.out");
+				args[1] = strdup("./file.txt");
+				args[2] = pattern_to_search_for;
+				args[3] = to_string(search_start_position+length/2+1).data();
+				args[4] = to_string(search_end_position).data();
+				args[5] = to_string(max_chunk_size).data();
+				args[6] = NULL;
+				execv(args[0], args);
 			} else{
+				cout << "[" << my_pid << "] forked right child " << rpid << "\n";
+				
 				//parent should wait
 				cout << "[" << my_pid << "] start position = " << search_start_position << " ; end position = " << search_end_position << "\n";
 
@@ -78,21 +99,23 @@ int main(int argc, char **argv)
 			}
 		}
 	} else{
-		//exec part1_searcher
+		//exec part2_searcher
 		pid_t searcher_pid = fork();
 		if(searcher_pid > 0){
 			cout << "[" << my_pid << "] forked searcher child " << searcher_pid << "\n";
+			waitpid(searcher_pid, NULL, 0);
 		}
 		else{
-			string executable = "part1.out";
-			argv[0] = executable.data();
-			argv[1] = file_to_search_in;
-			argv[2] = pattern_to_search_for;
-			argv[3] = to_string(search_start_position).data();
-			argv[4] = to_string(search_end_position).data();
-			argv[5] = NULL;
+			string executable = "part2_searcher.out";
+			char*args[6];
+			args[0] = executable.data();
+			args[1] = file_to_search_in;
+			args[2] = pattern_to_search_for;
+			args[3] = to_string(search_start_position).data();
+			args[4] = to_string(search_end_position).data();
+			args[5] = NULL;
 
-			execv("part2.out", argv);
+			execv("part2_searcher.out", args);
 		}
 	}
 	return 0;
