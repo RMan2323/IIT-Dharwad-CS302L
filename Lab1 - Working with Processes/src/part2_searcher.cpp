@@ -30,14 +30,13 @@ int main(int argc, char **argv){
 	
 	string patt(pattern_to_search_for);
 	getline(f, s);
-
 	for(int i = search_start_position; i < search_end_position; i++){
 		for(int j = 0; j < patt.length(); j++){
 			if(patt[j] != s[i+j]){
 				break;
 			}
 			if(j == patt.length()-1 && patt[j] == s[i+j]){
-				cout << "[" << getpid() << "] found at " << i << "\n";
+				cout << "--------[" << getpid() << "] found at " << i << "--------\n";
 				return 0;
 			}
 		}

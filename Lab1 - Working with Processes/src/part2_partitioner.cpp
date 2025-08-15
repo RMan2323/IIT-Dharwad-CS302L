@@ -48,7 +48,7 @@ int main(int argc, char **argv)
 			cout << "[" << getpid() << "] is the left child and is calling part2_partitioner\n";
 			char*args[7];
 		       	args[0] = strdup("./part2_partitioner.out");
-			args[1] = strdup("./file.txt");
+			args[1] = file_to_search_in;
 			args[2] = pattern_to_search_for;
 			args[3] = to_string(search_start_position).data();
 			args[4] = to_string(search_start_position+length/2).data();
@@ -66,7 +66,7 @@ int main(int argc, char **argv)
 				cout << "[" << getpid() << "] is the right child and is calling part2_partitioner\n";
 				char*args[7];
 		       		args[0] = strdup("./part2_partitioner.out");
-				args[1] = strdup("./file.txt");
+				args[1] = file_to_search_in;
 				args[2] = pattern_to_search_for;
 				args[3] = to_string(search_start_position+length/2+1).data();
 				args[4] = to_string(search_end_position).data();
@@ -103,7 +103,6 @@ int main(int argc, char **argv)
 			args[3] = to_string(search_start_position).data();
 			args[4] = to_string(search_end_position).data();
 			args[5] = NULL;
-
 			execv("part2_searcher.out", args);
 		}
 	}
