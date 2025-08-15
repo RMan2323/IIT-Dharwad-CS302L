@@ -28,6 +28,7 @@ int main(int argc, char **argv)
 		cerr << "Error: File could not be opened";
 		exit(-1);
 	}
+	cout << "[" << getpid() << "] start position = " << search_start_position << " ; end position = " << search_end_position << "\n";
 	
 	string s;
 	
@@ -43,14 +44,10 @@ int main(int argc, char **argv)
 
 		if(lpid == 0) {
 			//exec part2_partitioner with first half
-			//./partitioner.out <path-to-file> <pattern> <search-start-position> <search-end-position> <max-chunk-size>
 
-			//argv[4] = to_string(search_start_position + length/2).data();
-			//argv = (char**)realloc(argv, 7*sizeof(char*));
-			//argv[6] = NULL;
-			cout << "[" << my_pid << "] is calling part2\n";
+			cout << "[" << getpid() << "] is the left child and is calling part2_partitioner\n";
 			char*args[7];
-		       	args[0] = strdup("./part2.out");
+		       	args[0] = strdup("./part2_partitioner.out");
 			args[1] = strdup("./file.txt");
 			args[2] = pattern_to_search_for;
 			args[3] = to_string(search_start_position).data();
@@ -59,19 +56,16 @@ int main(int argc, char **argv)
 			args[6] = NULL;
 			execv(args[0], args);
 		} else{
-			cout << "[" << my_pid << "] forked left child " << lpid << "\n";
+			cout << "[" << getpid() << "] forked left child [" << lpid << "]\n";
 			
 			rpid = fork();
 
 			if(rpid == 0){
 				//exec part2_partitioner with second half
-				//argv[3] = to_string(search_start_position + length/2 + 1).data();
-				//argv = (char**)realloc(argv, 7*sizeof(char*));
-				//argv[6] = NULL;
-				//execv(argv[0], argv);
-				cout << "[" << my_pid << "] is calling part2\n";
+
+				cout << "[" << getpid() << "] is the right child and is calling part2_partitioner\n";
 				char*args[7];
-		       		args[0] = strdup("./part2.out");
+		       		args[0] = strdup("./part2_partitioner.out");
 				args[1] = strdup("./file.txt");
 				args[2] = pattern_to_search_for;
 				args[3] = to_string(search_start_position+length/2+1).data();
@@ -80,20 +74,14 @@ int main(int argc, char **argv)
 				args[6] = NULL;
 				execv(args[0], args);
 			} else{
-				cout << "[" << my_pid << "] forked right child " << rpid << "\n";
+				cout << "[" << getpid() << "] forked right child [" << rpid << "]\n";
 				
 				//parent should wait
-				cout << "[" << my_pid << "] start position = " << search_start_position << " ; end position = " << search_end_position << "\n";
-
 				waitpid(lpid, NULL, 0);
-				cout << "[" << my_pid << "] left child returned\n";
+				cout << "[" << getpid() << "] left child [" << lpid << "] returned\n";
 				waitpid(rpid, NULL, 0);
-				cout << "[" << my_pid << "] right child returned\n";
+				cout << "[" << getpid() << "] right child [" << rpid << "] returned\n";
 
-				// cout << "[" << my_pid << "] left child returned\n";
-				// cout << "[" << my_pid << "] right child returned\n";
-
-				cout << "[" << my_pid << "] searcher child returned \n";
 
 				//cout << "[" << my_pid << "] received SIGTERM\n"; //applicable for Part III of the assignment
 			}
@@ -101,11 +89,12 @@ int main(int argc, char **argv)
 	} else{
 		//exec part2_searcher
 		pid_t searcher_pid = fork();
-		if(searcher_pid > 0){
-			cout << "[" << my_pid << "] forked searcher child " << searcher_pid << "\n";
+		if(searcher_pid > 0){  //parent
+			cout << "[" << getpid() << "] forked searcher child [" << searcher_pid << "]\n";
 			waitpid(searcher_pid, NULL, 0);
+			cout << "[" << getpid() << "] searcher child [" << searcher_pid << "] returned \n";
 		}
-		else{
+		else{  //searcher child
 			string executable = "part2_searcher.out";
 			char*args[6];
 			args[0] = executable.data();
