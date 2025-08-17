@@ -37,12 +37,12 @@ int main(int argc, char **argv){
 			}
 			if(j == patt.length()-1 && patt[j] == s[i+j]){
 				cout << "--------[" << getpid() << "] found at " << i << "--------\n";
-				exit(0);
+				exit(2);  //exit with 2 when found
 			}
 		}
 	}
 	
 	cout << "[" << getpid() << "] didn't find\n";
-	exit(1);
+	exit(1);  //exit with 1 when not found
 }
 

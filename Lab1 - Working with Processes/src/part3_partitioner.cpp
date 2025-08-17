@@ -17,7 +17,20 @@ int main(int argc, char **argv)
 		return -1;
 	}
 	
-	//TODO Signal handler here??
+	void sighandler(int unused){
+		//TODO kill other children and send same signal to parent
+		//how to terminate other children
+		//no access to lpid and rpid??
+		cout << "[" << getpid() << " ] received SIGTERM";
+		exit(2);
+	}
+	
+	struct sigaction sa;
+	sa.sa_handler = sighandler;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	
+	sigaction(SIGTERM, &sa, nullptr);
 	
 	char *file_to_search_in = argv[1];
 	char *pattern_to_search_for = argv[2];
@@ -82,16 +95,23 @@ int main(int argc, char **argv)
 				//parent should wait
 				waitpid(lpid, &lstatus, 0);
 				cout << "[" << getpid() << "] left child [" << lpid << "] returned\n";
-				if(WEXITSTATUS(lstatus) == 0){
-					//TODO send SIGTERM to right child and others
+				if(WEXITSTATUS(lstatus) == 2){  //left child has found pattern
+					//send SIGTERM to right child and others
+					cout << "[" << getpid() << "] left child [" << lpid << "] successful\n";
+					cout << "[" << getpid() << "] right child [" << rpid << "] will be sent kill\n";
+					kill(rpid, SIGTERM);  //kill rightchild
+					cout << "[" << getpid() << "] returning with exit(2)\n";
+					exit(2);  //exit(2) will terminate this process and activate sighandling in parent
 				}
 				waitpid(rpid, &rstatus, 0);
 				cout << "[" << getpid() << "] right child [" << rpid << "] returned\n";
-				if(WEXITSTATUS(rstatus) == 0){
-					//TODO send SIGTERM to others
+				if(WEXITSTATUS(rstatus) == 2){
+					//send SIGTERM to others
+					cout << "[" << getpid() << "] right child [" << rpid << "] successful\n";
+					cout << "[" << getpid() << "] returning with exit(2)\n";
+					exit(2);  //exit(2) will terminate this process and activate sighandling in parent
+					
 				}
-
-				//cout << "[" << my_pid << "] received SIGTERM\n"; //applicable for Part III of the assignment
 			}
 		}
 	} else{
@@ -99,8 +119,14 @@ int main(int argc, char **argv)
 		pid_t searcher_pid = fork();
 		if(searcher_pid > 0){  //parent
 			cout << "[" << getpid() << "] forked searcher child [" << searcher_pid << "]\n";
-			waitpid(searcher_pid, NULL, 0);
+			int searchStatus;
+			waitpid(searcher_pid, &searchStatus, 0);
 			cout << "[" << getpid() << "] searcher child [" << searcher_pid << "] returned \n";
+			if(WEXITSTATUS(searchStatus) == 2){
+				//searcher has found the pattern
+				//send termination signals to the parent (exit(2) will handle it)
+				exit(2);
+			}
 		}
 		else{  //searcher child
 			string executable = "part3_searcher.out";
