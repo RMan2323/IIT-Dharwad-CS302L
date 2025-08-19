@@ -36,7 +36,12 @@ int main(int argc, char **argv){
 				break;
 			}
 			if(j == patt.length()-1 && patt[j] == s[i+j]){
+				// sleep(10);
 				cout << "--------[" << getpid() << "] found at " << i << "--------\n";
+				cout << "EXITING WITH STATUS 2\n";
+				// kill(-2, SIGTERM);
+				// sleep(1);
+				killpg(0, SIGTERM);
 				exit(2);  //exit with 2 when found
 			}
 		}
