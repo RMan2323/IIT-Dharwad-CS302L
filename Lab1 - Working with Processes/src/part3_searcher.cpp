@@ -6,7 +6,20 @@
 
 using namespace std;
 
+void sighandler(int unused)
+{
+	cout << "[" << getpid() << "] received SIGTERM\n";
+	exit(0);
+}
+
 int main(int argc, char **argv){
+	struct sigaction sa;
+	sa.sa_handler = sighandler;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	
+	sigaction(SIGTERM, &sa, nullptr);
+	
 	cout << "[" << getpid() << "] will start searching!\n";
 	if(argc != 5){
 		cout <<"usage: ./partitioner.out <path-to-file> <pattern> <search-start-position> <search-end-position>\nprovided arguments:\n";
@@ -36,13 +49,9 @@ int main(int argc, char **argv){
 				break;
 			}
 			if(j == patt.length()-1 && patt[j] == s[i+j]){
-				// sleep(10);
 				cout << "--------[" << getpid() << "] found at " << i << "--------\n";
-				cout << "EXITING WITH STATUS 2\n";
-				// kill(-2, SIGTERM);
-				// sleep(1);
-				killpg(0, SIGTERM);
-				exit(2);  //exit with 2 when found
+				killpg(getpgrp(), SIGTERM);  //kill pg
+				exit(0);  //exit with 0 when found
 			}
 		}
 	}

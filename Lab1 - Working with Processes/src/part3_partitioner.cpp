@@ -7,21 +7,21 @@
 
 using namespace std;
 
-int pgid = 111111;
-
 void sighandler(int unused)
 {
-	//TODO kill other children and send same signal to parent
-	//how to terminate other children
-	//no access to lpid and rpid??
-	// killpg(0, SIGTERM);
-	cout << "---------------------- [" << getpid() << "] received SIGTERM ----------------------\n";
-	exit(2);
+	//TODO the leader should wait for left and right children to exit before exiting itself
+	//wait() will return -1 if there are no ongoing child processes
+	while(wait(NULL) > 0);
+	cout << "[" << getpid() << "] received SIGTERM\n";
+	exit(0);
 }
 
 int main(int argc, char **argv)
 {
-	setpgid(0, pgid);
+	//set the pgid of this process (pid = 0) to getpgrp()
+	//for the first call, getpgrp() = pgid of this pid = pgid of root
+	//for subsequent execs, getpgrp() = pgid of this pid = pgid of root since pgid of children is set to pgid of root later after forking
+	setpgid(0, getpgrp());
 	
 	if(argc != 6)
 	{
@@ -49,7 +49,7 @@ int main(int argc, char **argv)
 		cerr << "Error: File could not be opened\n";
 		exit(-1);
 	}
-	cout << "[" << getpid() << "] start position = " << search_start_position << " ; end position = " << search_end_position << "\n";
+	cout << "[" << getpid() << "] start position = " << search_start_position << " ; end position = " << search_end_position << " ; pgrp = " << getpgrp() << "\n";
 	
 	string s;
 	
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 	{
 		pid_t lpid = fork(), rpid;
 
-		if(lpid == 0) {
+		if(lpid == 0) {  //left child
 			//exec part2_partitioner with first half
 
 			cout << "[" << getpid() << "] is the left child and is calling part3_partitioner\n";
@@ -76,12 +76,13 @@ int main(int argc, char **argv)
 			args[5] = to_string(max_chunk_size).data();
 			args[6] = NULL;
 			execv(args[0], args);
-		} else{
+		} else{  //parent
+			setpgid(lpid, getpgrp());  //setpgid of left child to pgid of the parent process
 			cout << "[" << getpid() << "] forked left child [" << lpid << "]\n";
 			
 			rpid = fork();
 
-			if(rpid == 0){
+			if(rpid == 0){  //right child
 				//exec part2_partitioner with second half
 
 				cout << "[" << getpid() << "] is the right child and is calling part3_partitioner\n";
@@ -94,57 +95,30 @@ int main(int argc, char **argv)
 				args[5] = to_string(max_chunk_size).data();
 				args[6] = NULL;
 				execv(args[0], args);
-			} else{
+			} else{  //parent
+				setpgid(rpid, getpgrp());  //setpgid of right child to pgid of the parent process
 				cout << "[" << getpid() << "] forked right child [" << rpid << "]\n";
 				
-				int lstatus, rstatus;
-				//parent should wait
-				int status;
-				int wc = wait(&status);
-				cout << "------------- STATUS child pid " << wc << " exited with " << WEXITSTATUS(status) << "\n";
-				// waitpid(lpid, &lstatus, 0);
-				if (wc == lpid)
-				{
-					cout << "[" << getpid() << "] left child [" << lpid << "] returned with " << WEXITSTATUS(status) << "\n";
-					if(WEXITSTATUS(status) == 2){  //left child has found pattern
-						//send SIGTERM to right child and others
-						cout << "[" << getpid() << "] left child [" << lpid << "] successful\n";
-						cout << "[" << getpid() << "] right child [" << rpid << "] will be sent kill\n";
-						kill(rpid, SIGTERM);  //kill rightchild
-						cout << "[" << getpid() << "] returning with exit(2)\n";
-						exit(2);  //exit(2) will terminate this process and activate sighandling in parent
-					}
-				}
-				else
-				{
-					// waitpid(rpid, &rstatus, 0);
-					cout << "[" << getpid() << "] right child [" << rpid << "] returned with " << WEXITSTATUS(status) << "\n";
-					if(WEXITSTATUS(status) == 2){
-						//send SIGTERM to others
-						cout << "[" << getpid() << "] right child [" << rpid << "] successful\n";
-						cout << "[" << getpid() << "] left child [" << lpid << "] will be sent kill\n";
-						kill(lpid, SIGTERM);  //kill leftchild
-						cout << "[" << getpid() << "] returning with exit(2)\n";
-						exit(2);  //exit(2) will terminate this process and activate sighandling in parent
-						
-					}
-				}
+				//parent should wait for both the processes to exit
+				//cannot use a single wait() because if any one process exits, the parent may exit without all processes exiting
+				//wait() will return -1 if there are no ongoing child processes
+				while(wait(NULL) > 0);
 				
+				//int lstatus, rstatus;
+				//int lwc = waitpid(lpid, &lstatus, 0), rwc = waitpid(rpid, &rstatus, 0);
+				//cout << "[" << lwc << "] exited with status " << WEXITSTATUS(lstatus) << "\n";
+				//cout << "[" << rwc << "] exited with status " << WEXITSTATUS(rstatus) << "\n";
 			}
 		}
 	} else{
 		//exec part3_searcher
 		pid_t searcher_pid = fork();
+		setpgid(searcher_pid, getpgrp());
 		if(searcher_pid > 0){  //parent
 			cout << "[" << getpid() << "] forked searcher child [" << searcher_pid << "]\n";
 			int searchStatus;
 			waitpid(searcher_pid, &searchStatus, 0);
 			cout << "[" << getpid() << "] searcher child [" << searcher_pid << "] returned \n";
-			if(WEXITSTATUS(searchStatus) == 2){
-				//searcher has found the pattern
-				//send termination signals to the parent (exit(2) will handle it)
-				exit(2);
-			}
 		}
 		else{  //searcher child
 			string executable = "part3_searcher.out";
