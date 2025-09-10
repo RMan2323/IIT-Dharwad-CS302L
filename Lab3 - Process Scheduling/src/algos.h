@@ -5,9 +5,28 @@
 
 using namespace std;
 
-void fifo();
-void np_sjf(const vector<vector<int>>& processes);
-void p_sjf();
+class Process{
+    public:
+    int p_no;            //process number
+    int arrival;         //arrival time
+    vector<int> bursts;  //bursts
+    int current;         //points to the current burst that is to be run
+    int completed;       //holds the time when processes was completed, else holds -1
+    int start_when;      //stores the time at/after which the process can begin its CPU burst
+
+    Process(const vector<int>& proc, const int i){
+        arrival = proc[0];
+        bursts = proc;
+        current = 1;  //start from bursts[1] since bursts[0] is the arrival time
+        completed = -1;
+        p_no = i+1;
+        start_when = arrival;
+    }
+};
+
+void fifo(const vector<Process>& processes);
+void np_sjf(const vector<Process>& processes);
+void p_sjf(const vector<Process>& processes);
 void rr();
 
 #endif

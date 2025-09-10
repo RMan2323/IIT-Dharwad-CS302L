@@ -29,18 +29,21 @@ int main(int argc, char **argv){
 		if(s.find('<') == string::npos){  //if "<" is not found
 			stringstream ss(s);           //convert line to stream
 			string p;                     //store the tokens in this before appending to vec
-			vector<int> process;          //vec to store tokens
+			vector<int> Process;          //vec to store tokens
 			while(ss >> p){               //extract tokens by whitespace into p
 				if(p == "-1") break;
-				process.push_back(stoi(p));
+				Process.push_back(stoi(p));
 			}
 
-			processes.push_back(process);
+			processes.push_back(Process);
 		}
 
 		if(strstr(s.data(), end.data()))  //if "</pre>" is found
 			break;
 	}
+
+	// cout << "check_1" << endl;
+
 
 	for(auto i:processes){
 		for(auto j:i){
@@ -51,7 +54,21 @@ int main(int argc, char **argv){
 
 	cout << endl;
 
-	np_sjf(processes);
+	// cout << "check_2" << endl;
+
+	vector<Process> process_arr;
+
+	// cout << "check_3" << endl;
+
+    for(int i = 0; i < processes.size(); i++){
+        Process p(processes[i], i);
+        process_arr.push_back(p);
+    }
+
+	// cout << "check_4" << endl;
+
+	// np_sjf(process_arr);
+	fifo(process_arr);
     
     return 0;
 }

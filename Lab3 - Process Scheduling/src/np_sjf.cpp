@@ -1,54 +1,41 @@
 #include <iostream>
 #include <vector>
 #include <queue>
+#include "algos.h"
 
 using namespace std;
 
-class process{
-    public:
-    int p_no;            //process number
-    int arrival;         //arrival time
-    vector<int> bursts;  //bursts
-    int current;         //points to the current burst that is to be run
-    int completed;       //holds the time when processes was completed, else holds -1
-    int start_when;      //stores the time at/after which the process can begin its CPU burst
-
-    process(const vector<int>& proc, const int i){
-        arrival = proc[0];
-        bursts = proc;
-        current = 1;  //start from bursts[1] since bursts[0] is the arrival time
-        completed = -1;
-        p_no = i+1;
-        start_when = arrival;
-    }
-};
 
 class comp{
     public:
-    bool operator()(const process& p1, const process& p2){
+    bool operator()(const Process& p1, const Process& p2){
         return p1.bursts[p1.current] > p2.bursts[p2.current];
     }
 };
 
-void np_sjf(const vector<vector<int>>& procs){
-    vector<process> processes;
+void np_sjf(const vector<Process>& processes){
 
-    for(int i = 0; i < procs.size(); i++){
-        process p(procs[i], i);
-        processes.emplace_back(p);
-    }
-
+	// cout << "1_check_1" << endl;
+    cout << processes.size() <<endl;
     for(auto i: processes){
         cout << i.arrival << endl;
     }
 
-    priority_queue<process, vector<process>, comp> ready;
-    // queue<process> blocked;
+    priority_queue<Process, vector<Process>, comp> ready;
+    // queue<Process> blocked;
+	// cout << "1_check_2" << endl;
+    
 
     int time = processes[0].arrival;  //processes already given with non-decreasing arrivals
+	
+    // cout << "1_check_3" << endl;
+
     int iter = 0;
-    int not_arrived = 0;  //min process no. which hasn't arrived yet
+    int not_arrived = 0;  //min Process no. which hasn't arrived yet
     int done = 0;
+	
+    cout << "1_check_3" << endl;
+
     while(done != processes.size()){
         iter++;
 
@@ -65,12 +52,15 @@ void np_sjf(const vector<vector<int>>& procs){
         }
 
         //pop and run the shortest ready process
-        process current = ready.top();
+        Process current = ready.top();
         cout << "\tRunning P" << current.p_no << "," << (current.current-1)/2 << endl;
         time += (current.bursts[current.current]);
         current.current++;
         ready.pop();
         cout << "\tProcess ran till " << time-1 << endl << endl;
+
+
+
 
         //add the io time and push it back into ready queue
         current.start_when = time+current.bursts[current.current];
