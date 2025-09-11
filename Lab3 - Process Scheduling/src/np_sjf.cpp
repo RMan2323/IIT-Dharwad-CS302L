@@ -1,10 +1,10 @@
 #include <iostream>
 #include <vector>
 #include <queue>
+#include <fstream>
 #include "algos.h"
 
 using namespace std;
-
 
 class comp{
     public:
@@ -14,36 +14,26 @@ class comp{
 };
 
 void np_sjf(const vector<Process>& processes){
+    ofstream f;
+    f.open("./schedule.txt");
 
-	// cout << "1_check_1" << endl;
-    cout << processes.size() <<endl;
-    for(auto i: processes){
-        cout << i.arrival << endl;
-    }
+    // cout << processes.size() <<endl;
+    // for(auto i: processes){
+    //     cout << i.arrival << endl;
+    // }
 
     priority_queue<Process, vector<Process>, comp> ready;
-    // queue<Process> blocked;
-	// cout << "1_check_2" << endl;
     
-
     int time = processes[0].arrival;  //processes already given with non-decreasing arrivals
-	
-    // cout << "1_check_3" << endl;
-
     int iter = 0;
     int not_arrived = 0;  //min Process no. which hasn't arrived yet
     int done = 0;
-	
-    cout << "1_check_3" << endl;
 
     while(done != processes.size()){
         iter++;
 
-        //push ready processes to the queue
-        // int p = 0;
         cout << "Current time: " << time << endl;;
         for(; not_arrived < processes.size();){
-            // p++;
             if(processes[not_arrived].arrival <= time){
                 cout << "\tProcess " << not_arrived << " is ready\n";
                 ready.push(processes[not_arrived]);
@@ -53,13 +43,13 @@ void np_sjf(const vector<Process>& processes){
 
         //pop and run the shortest ready process
         Process current = ready.top();
+        if(current.start_when > time) time = current.start_when;
         cout << "\tRunning P" << current.p_no << "," << (current.current-1)/2 << endl;
+        f << "P" << current.p_no << "," << (current.current-1)/2 << "\t" << time << "\t";
         time += (current.bursts[current.current]);
         current.current++;
         ready.pop();
         cout << "\tProcess ran till " << time-1 << endl << endl;
-
-
 
 
         //add the io time and push it back into ready queue
@@ -67,8 +57,10 @@ void np_sjf(const vector<Process>& processes){
         current.current++;
         if(current.current < current.bursts.size()) ready.push(current);
         else {
-            current.completed = time;
+            current.completed = time-1;
             done++;
         }
+        f << time-1 << "\n";
     }
+    f.close();
 }

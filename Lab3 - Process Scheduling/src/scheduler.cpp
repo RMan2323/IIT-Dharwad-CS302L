@@ -10,12 +10,21 @@ using namespace std;
 
 int main(int argc, char **argv){
 
-	if(argc != 2){
-		cout << "Usage: ./a.out <path to .dat file>\n";
-		exit(0);
+	if(argc != 3){
+		cout << "Usage: ./a.out <algorithm> <path to .dat file>\n";
+		cout << "Algorithm can be one of the following:\n";
+		cout << "0) FIFO\n1) Non-Preemptive SJF\n2) Preemptive SJF\n3) Round Robin\n";
+		exit(-1);
+	}
+	
+	if(atoi(argv[1]) > 3 || atoi(argv[1]) < 0){
+		cout << "Invalid algorithm\n";
+		cout << "Algorithm can be one of the following:\n";
+		cout << "0) FIFO\n1) Non-Preemptive SJF\n2) Preemptive SJF\n3) Round Robin\n";
+		exit(-1);
 	}
 
-    ifstream f(argv[1]);
+	ifstream f(argv[2]);
 	if(!f.is_open()){
 		cerr << "Error: File could not be opened";
 		exit(-1);
@@ -23,27 +32,24 @@ int main(int argc, char **argv){
 
     string s;
 	string start = "<", end = "</pre>";
-	vector<vector<int>> processes;
+	vector<vector<int>> processes;        //2D int arr to store .dat file
 
 	while(getline(f, s)){
 		if(s.find('<') == string::npos){  //if "<" is not found
 			stringstream ss(s);           //convert line to stream
 			string p;                     //store the tokens in this before appending to vec
-			vector<int> Process;          //vec to store tokens
+			vector<int> process;          //temp vec to store tokens
 			while(ss >> p){               //extract tokens by whitespace into p
 				if(p == "-1") break;
-				Process.push_back(stoi(p));
+				process.push_back(stoi(p));
 			}
 
-			processes.push_back(Process);
+			processes.push_back(process);
 		}
 
 		if(strstr(s.data(), end.data()))  //if "</pre>" is found
 			break;
 	}
-
-	// cout << "check_1" << endl;
-
 
 	for(auto i:processes){
 		for(auto j:i){
@@ -54,21 +60,35 @@ int main(int argc, char **argv){
 
 	cout << endl;
 
-	// cout << "check_2" << endl;
-
-	vector<Process> process_arr;
-
-	// cout << "check_3" << endl;
+	vector<Process> process_arr;	//vector of process objects
 
     for(int i = 0; i < processes.size(); i++){
-        Process p(processes[i], i);
-        process_arr.push_back(p);
+        Process p(processes[i], i); //convert process number i to process object
+        process_arr.push_back(p);   //push into the queue
     }
 
-	// cout << "check_4" << endl;
+	switch(atoi(argv[1])){
+		case 0:
+			fifo(process_arr);
+			break;
 
-	// np_sjf(process_arr);
-	fifo(process_arr);
+		case 1:
+			np_sjf(process_arr);
+			np_sjf_2(process_arr);
+			break;
+
+		case 2:
+			//TODO preemptive_sjf
+			break;
+
+		case 3:
+			int quantum;
+			cout << "Enter time quantum: ";
+			cin >> quantum;
+			rr(process_arr, quantum);
+			rr_2(process_arr, quantum);
+			break;
+	}
     
     return 0;
 }
