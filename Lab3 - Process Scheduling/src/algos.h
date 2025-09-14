@@ -13,6 +13,7 @@ class Process{
     int current;         //points to the current burst that is to be run
     int completed;       //holds the time when processes was completed, else holds -1
     int start_when;      //stores the time at/after which the process can begin its CPU burst
+    int remaining_time;
 
     Process() {
         p_no = -1;
@@ -20,6 +21,7 @@ class Process{
         current = 1;
         completed = -1;
         start_when = 0;
+        remaining_time = 0;
     }
 
     Process(const vector<int>& proc, const int i){
@@ -29,6 +31,7 @@ class Process{
         completed = -1;
         p_no = i+1;
         start_when = arrival;
+        remaining_time = 0;
     }
 };
 
@@ -36,7 +39,8 @@ void fifo(const vector<Process>& processes);
 void fifo_2(vector<Process>& processes);
 void np_sjf(const vector<Process>& processes);
 void np_sjf_2(const vector<Process>& processes);
-void p_sjf(const vector<Process>& processes);
+void p_sjf(vector<Process>& processes);
+void p_sjf_2(vector<Process>& processes);
 void rr(const vector<Process>& processes, int quantum);
 void rr_2(const vector<Process>& processes, int quantum);
 

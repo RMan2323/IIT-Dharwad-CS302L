@@ -87,8 +87,20 @@ int main(int argc, char **argv){
 			break;
 
 		case 2:
-			//TODO preemptive_sjf
-			break;
+        cout << "\n--- Running Preemptive SJF for 1 CPU ---" << endl;
+        p_sjf(process_arr);
+
+        // Reset process state for the next simulation if needed
+        for(auto& p : process_arr) {
+            p.current = 1;
+            p.completed = -1;
+            p.start_when = p.arrival;
+            p.remaining_time = 0;
+        }
+
+        cout << "\n--- Running Preemptive SJF for 2 CPUs ---" << endl;
+        p_sjf_2(process_arr);
+        break;
 
 		case 3:
 			int quantum;
