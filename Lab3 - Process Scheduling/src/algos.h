@@ -33,6 +33,7 @@ class Process{
 };
 
 void fifo(const vector<Process>& processes);
+void fifo_2(vector<Process>& processes);
 void np_sjf(const vector<Process>& processes);
 void np_sjf_2(const vector<Process>& processes);
 void p_sjf(const vector<Process>& processes);

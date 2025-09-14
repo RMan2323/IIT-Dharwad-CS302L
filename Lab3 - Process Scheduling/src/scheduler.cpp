@@ -67,10 +67,19 @@ int main(int argc, char **argv){
         process_arr.push_back(p);   //push into the queue
     }
 
+// In scheduler.cpp, inside the switch case for FIFO
+
 	switch(atoi(argv[1])){
 		case 0:
-			fifo(process_arr);
-			break;
+		// For Part I (1 CPU)
+		cout << "\n--- Running FIFO for 1 CPU ---" << endl;
+		fifo(process_arr); 
+
+		// For Part II (2 CPUs)
+		cout << "\n--- Running FIFO for 2 CPUs ---" << endl;
+		fifo_2(process_arr);
+		break;
+
 
 		case 1:
 			np_sjf(process_arr);

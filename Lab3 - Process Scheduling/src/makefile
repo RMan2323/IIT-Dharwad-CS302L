@@ -6,8 +6,8 @@ run-simulator: scheduler.out
 	echo; \
 	./scheduler.out $$c ./$$f
 
-scheduler.out: scheduler.cpp np_sjf.cpp np_sjf_2.cpp rr.cpp rr_2.cpp fifo.cpp algos.h
-	g++ scheduler.cpp np_sjf.cpp np_sjf_2.cpp rr.cpp rr_2.cpp fifo.cpp -o scheduler.out
+scheduler.out: scheduler.cpp np_sjf.cpp np_sjf_2.cpp rr.cpp rr_2.cpp fifo.cpp fifo_2.cpp algos.h
+	g++ scheduler.cpp np_sjf.cpp np_sjf_2.cpp rr.cpp rr_2.cpp fifo.cpp fifo_2.cpp -o scheduler.out
 
 clean:
 	rm *.out
