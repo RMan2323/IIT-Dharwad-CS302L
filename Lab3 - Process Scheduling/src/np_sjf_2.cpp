@@ -3,106 +3,151 @@
 #include <queue>
 #include <fstream>
 #include <climits>
+#include <chrono>  // Required for timing
+#include <iomanip> // Required for formatting output
+
 #include "algos.h"
 
 using namespace std;
 
+// A struct to log schedule entries in memory for later printing.
+struct ScheduleEntry2 {
+    int cpu_id;
+    int p_no;
+    int burst_no;
+    int start_time;
+    int end_time;
+};
+
 class comp {
-public:
+   public:
     bool operator()(const Process& p1, const Process& p2) {
         return p1.bursts[p1.current] > p2.bursts[p2.current];
     }
 };
 
+// Simplified struct to manage the state of each CPU core.
 class CPU {
-public:
+   public:
     bool busy = false;
-    Process current;
-    int finish_time = -1; //when the current burst ends
-    int start_time = -1;
-    int burst_no = -1;
-
-    CPU(){
-        busy = false;
-        finish_time = -1;
-        start_time = -1;
-        burst_no = -1;
-    }
+    Process current_process;
+    int finish_time = -1;
 };
 
 void np_sjf_2(const vector<Process>& processes) {
-    ofstream f("./schedule_2.txt");
+    // Make a mutable copy to track completion times and other state changes.
+    vector<Process> local_processes = processes;
+    vector<ScheduleEntry2> schedule_log;
+
+    // --- Simulation Starts Here ---
+    auto sim_start_timer = chrono::high_resolution_clock::now();
 
     priority_queue<Process, vector<Process>, comp> ready;
-
-    int time = processes[0].arrival; //processes already sorted by arrival
+    int time = local_processes.empty() ? 0 : local_processes[0].arrival;
     int not_arrived = 0;
     int done = 0;
+    CPU cpus[2];
 
-    CPU cpus[2]; //two cores
-
-    while (done != processes.size()) {
-        while (not_arrived < processes.size() && processes[not_arrived].arrival <= time) {
-            ready.push(processes[not_arrived]);
+    while (done != local_processes.size()) {
+        // Add arrived processes to the ready queue.
+        while (not_arrived < local_processes.size() && local_processes[not_arrived].arrival <= time) {
+            ready.push(local_processes[not_arrived]);
             not_arrived++;
         }
 
-        //give ready jobs to any free CPU
+        // Assign ready jobs to any free CPU.
         for (int i = 0; i < 2; i++) {
             if (!cpus[i].busy && !ready.empty()) {
-                Process current = ready.top();
+                Process p = ready.top();
                 ready.pop();
 
-                if (current.start_when > time) time = current.start_when;
+                int start_time = (p.start_when > time) ? p.start_when : time;
+                int duration = p.bursts[p.current];
 
                 cpus[i].busy = true;
-                cpus[i].start_time = time;
-                cpus[i].burst_no = (current.current - 1) / 2;
-                cpus[i].finish_time = time + current.bursts[current.current];
-                current.current++;
+                cpus[i].finish_time = start_time + duration;
+                cpus[i].current_process = p;
 
-                f << "CPU " << i << "\n";
-                f << "P" << current.p_no << "," << cpus[i].burst_no << "\t" << cpus[i].start_time << "\t" << (cpus[i].finish_time - 1) << "\n";
-
-                cpus[i].current = current;
+                schedule_log.push_back({i + 1, p.p_no, (p.current - 1) / 2, start_time, cpus[i].finish_time - 1});
             }
         }
 
-        //advance time to the earliest finishing CPU
-        int next_event = INT_MAX;
+        // Find the earliest time a CPU will finish.
+        int next_event_time = INT_MAX;
         for (int i = 0; i < 2; i++) {
-            if (cpus[i].busy) next_event = min(next_event, cpus[i].finish_time);
+            if (cpus[i].busy) {
+                next_event_time = min(next_event_time, cpus[i].finish_time);
+            }
         }
-        if (next_event == INT_MAX) {
-            //nothing running, jump to next arrival
-            if (not_arrived < processes.size())
-                time = processes[not_arrived].arrival;
+
+        // If no CPUs are busy, jump time to the next process arrival.
+        if (next_event_time == INT_MAX) {
+            if (not_arrived < local_processes.size()) {
+                time = local_processes[not_arrived].arrival;
+            }
             continue;
         }
 
-        time = next_event;
+        time = next_event_time;
 
-        //free CPUs that finished at this time
+        // Process all CPUs that finished at this time.
         for (int i = 0; i < 2; i++) {
             if (cpus[i].busy && cpus[i].finish_time == time) {
-                Process current = cpus[i].current;
-                //handle I/O burst if present
-                if (current.current < current.bursts.size()) {
-                    current.start_when = time + current.bursts[current.current];
-                    current.current++;
-                    if (current.current < current.bursts.size()) {
-                        ready.push(current);
+                Process p = cpus[i].current_process;
+                p.current++;
+
+                if (p.current < p.bursts.size()) {
+                    p.start_when = time + p.bursts[p.current];
+                    p.current++;
+                    if (p.current < p.bursts.size()) {
+                        ready.push(p);
                     } else {
-                        current.completed = time - 1;
+                        local_processes[p.p_no - 1].completed = p.start_when;
                         done++;
                     }
                 } else {
-                    current.completed = time - 1;
+                    local_processes[p.p_no - 1].completed = time;
                     done++;
                 }
                 cpus[i].busy = false;
             }
         }
     }
-    f.close();
+    
+    auto sim_end_timer = chrono::high_resolution_clock::now();
+    // --- Simulation Ends Here ---
+    
+    // --- All File I/O and Printing Happens Below ---
+    chrono::duration<double, milli> elapsed_ms = sim_end_timer - sim_start_timer;
+    
+    ofstream schedule_file("schedule_2.txt");
+    if (!schedule_file.is_open()) {
+        cerr << "Error: Could not open schedule_2.txt for writing." << endl;
+        return;
+    }
+
+    // 1. Write the schedule from the log.
+    for (const auto& entry : schedule_log) {
+        schedule_file << "CPU" << entry.cpu_id << "\n" << "P" << entry.p_no << "," << entry.burst_no
+                      << "\t" << entry.start_time << "\t" << entry.end_time << "\n";
+    }
+
+    // 2. Calculate and write the final statistics.
+    double total_turnaround_time = 0;
+    int max_turnaround_time = 0;
+    for (const auto& p : local_processes) {
+        int turnaround = p.completed - p.arrival;
+        total_turnaround_time += turnaround;
+        if (turnaround > max_turnaround_time) {
+            max_turnaround_time = turnaround;
+        }
+    }
+
+    schedule_file << "\n--- Performance Metrics ---\n";
+    schedule_file << fixed << setprecision(3);
+    schedule_file << "Simulator Runtime: " << elapsed_ms.count() << " ms\n";
+    schedule_file << "Average Turnaround Time: " << total_turnaround_time / local_processes.size() << "\n";
+    schedule_file << "Maximum Turnaround Time: " << max_turnaround_time << "\n";
+
+    schedule_file.close();
 }
