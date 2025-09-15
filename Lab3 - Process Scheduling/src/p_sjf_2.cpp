@@ -4,13 +4,12 @@
 #include <fstream>
 #include <algorithm>
 #include <limits>
-#include <chrono>  // Required for timing
-#include <iomanip> // Required for formatting output
+#include <chrono>
+#include <iomanip>
 
 #include "algos.h"
 #include <climits>
 
-// A struct to log schedule entries for multiple CPUs.
 struct ScheduleEntry2 {
     int cpu_id;
     int p_no;
@@ -28,7 +27,6 @@ struct CompareProcess2 {
 void p_sjf_2(vector<Process>& processes, string file_name) {
     vector<ScheduleEntry2> schedule_log;
 
-    // --- Simulation Starts Here ---
     auto sim_start_timer = chrono::high_resolution_clock::now();
 
     const int NUM_CPUS = 2;
@@ -42,7 +40,6 @@ void p_sjf_2(vector<Process>& processes, string file_name) {
     int next_arrival_idx = 0;
 
     while (completed_processes < processes.size()) {
-        // 1. Add newly arrived and I/O-finished processes to ready queue.
         while (next_arrival_idx < processes.size() && processes[next_arrival_idx].arrival <= simulation_time) {
             ready_queue.push(&processes[next_arrival_idx]);
             next_arrival_idx++;
@@ -54,11 +51,11 @@ void p_sjf_2(vector<Process>& processes, string file_name) {
             } else { ++it; }
         }
 
-        // 2. Scheduling Decision: Check for preemption.
+        //Check preemption
         if (!ready_queue.empty()) {
-            // Find the running process with the longest remaining time.
+            //Find the running process with the longest remaining time
             int longest_rem_cpu_idx = -1;
-            int max_rem_time = 0; // Must be > 0 to be preemptible
+            int max_rem_time = 0; //Must be > 0 to be preemptible
             for (int j = 0; j < NUM_CPUS; ++j) {
                 if (running_on_cpu[j] != nullptr && running_on_cpu[j]->remaining_time > max_rem_time) {
                     max_rem_time = running_on_cpu[j]->remaining_time;
@@ -66,7 +63,7 @@ void p_sjf_2(vector<Process>& processes, string file_name) {
                 }
             }
 
-            // If a ready process is shorter than the longest running one, preempt.
+            //If a ready process is shorter than the longest running one, preempt
             if (longest_rem_cpu_idx != -1 && ready_queue.top()->remaining_time < max_rem_time) {
                 Process* preempted_process = running_on_cpu[longest_rem_cpu_idx];
                 if (simulation_time > last_dispatch_time[longest_rem_cpu_idx]) {
@@ -77,7 +74,7 @@ void p_sjf_2(vector<Process>& processes, string file_name) {
             }
         }
 
-        // Dispatch to idle CPUs.
+        //Give process to idle CPUs
         for (int i = 0; i < NUM_CPUS; ++i) {
             if (running_on_cpu[i] == nullptr && !ready_queue.empty()) {
                 running_on_cpu[i] = ready_queue.top();
@@ -89,7 +86,7 @@ void p_sjf_2(vector<Process>& processes, string file_name) {
             }
         }
 
-        // 3. Advance time.
+        //Advance time
         bool all_cpus_idle = true;
         for(int i=0; i<NUM_CPUS; ++i) if(running_on_cpu[i] != nullptr) all_cpus_idle = false;
         
@@ -99,12 +96,12 @@ void p_sjf_2(vector<Process>& processes, string file_name) {
             for(const auto& p_io : io_wait_list) next_event_time = min(next_event_time, p_io->start_when);
 
             if(next_event_time != INT_MAX) simulation_time = next_event_time;
-            else break; // No more events
+            else break; //No more events
             continue;
         }
         simulation_time++;
 
-        // 4. Update running processes.
+        //Update running processes
         for (int i = 0; i < NUM_CPUS; ++i) {
             if (running_on_cpu[i] != nullptr) {
                 running_on_cpu[i]->remaining_time--;
@@ -128,9 +125,8 @@ void p_sjf_2(vector<Process>& processes, string file_name) {
     }
 
     auto sim_end_timer = chrono::high_resolution_clock::now();
-    // --- Simulation Ends Here ---
     
-    // --- All File I/O and Printing Happens Below ---
+    //File output
     chrono::duration<double, milli> elapsed_ms = sim_end_timer - sim_start_timer;
 
     cout << file_name << endl;
@@ -141,13 +137,11 @@ void p_sjf_2(vector<Process>& processes, string file_name) {
         return;
     }
 
-    // 1. Write the schedule from the log.
     for (const auto& entry : schedule_log) {
         schedule_file << "CPU" << entry.cpu_id << "\n" << "P" << entry.p_no << "," << entry.burst_no + 1
                       << "\t" << entry.start_time << "\t" << entry.end_time << "\n";
     }
 
-    // 2. Calculate and write the final statistics.
     double total_turnaround_time = 0;
     int max_turnaround_time = 0;
     for (const auto& p : processes) {
