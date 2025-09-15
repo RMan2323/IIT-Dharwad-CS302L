@@ -3,14 +3,13 @@
 #include <queue>
 #include <fstream>
 #include <climits>
-#include <chrono>  // Required for timing
-#include <iomanip> // Required for formatting output
+#include <chrono>
+#include <iomanip>
 
 #include "algos.h"
 
 using namespace std;
 
-// A struct to log schedule entries in memory for later printing.
 struct ScheduleEntry2 {
     int cpu_id;
     int p_no;
@@ -26,7 +25,6 @@ class comp {
     }
 };
 
-// Simplified struct to manage the state of each CPU core.
 class CPU {
    public:
     bool busy = false;
@@ -35,11 +33,9 @@ class CPU {
 };
 
 void np_sjf_2(const vector<Process>& processes, string file_name) {
-    // Make a mutable copy to track completion times and other state changes.
     vector<Process> local_processes = processes;
     vector<ScheduleEntry2> schedule_log;
 
-    // --- Simulation Starts Here ---
     auto sim_start_timer = chrono::high_resolution_clock::now();
 
     priority_queue<Process, vector<Process>, comp> ready;
@@ -49,13 +45,13 @@ void np_sjf_2(const vector<Process>& processes, string file_name) {
     CPU cpus[2];
 
     while (done != local_processes.size()) {
-        // Add arrived processes to the ready queue.
+        //Add arrived processes to the ready queue
         while (not_arrived < local_processes.size() && local_processes[not_arrived].arrival <= time) {
             ready.push(local_processes[not_arrived]);
             not_arrived++;
         }
 
-        // Assign ready jobs to any free CPU.
+        //Assign ready jobs to any free CPU
         for (int i = 0; i < 2; i++) {
             if (!cpus[i].busy && !ready.empty()) {
                 Process p = ready.top();
@@ -72,7 +68,7 @@ void np_sjf_2(const vector<Process>& processes, string file_name) {
             }
         }
 
-        // Find the earliest time a CPU will finish.
+        //Find the earliest time a CPU will finish
         int next_event_time = INT_MAX;
         for (int i = 0; i < 2; i++) {
             if (cpus[i].busy) {
@@ -80,7 +76,7 @@ void np_sjf_2(const vector<Process>& processes, string file_name) {
             }
         }
 
-        // If no CPUs are busy, jump time to the next process arrival.
+        //If no CPUs are busy, jump time to the next process arrival
         if (next_event_time == INT_MAX) {
             if (not_arrived < local_processes.size()) {
                 time = local_processes[not_arrived].arrival;
@@ -90,7 +86,7 @@ void np_sjf_2(const vector<Process>& processes, string file_name) {
 
         time = next_event_time;
 
-        // Process all CPUs that finished at this time.
+        //Process all CPUs that finished at this time
         for (int i = 0; i < 2; i++) {
             if (cpus[i].busy && cpus[i].finish_time == time) {
                 Process p = cpus[i].current_process;
@@ -115,9 +111,8 @@ void np_sjf_2(const vector<Process>& processes, string file_name) {
     }
     
     auto sim_end_timer = chrono::high_resolution_clock::now();
-    // --- Simulation Ends Here ---
-    
-    // --- All File I/O and Printing Happens Below ---
+
+    //File output
     chrono::duration<double, milli> elapsed_ms = sim_end_timer - sim_start_timer;
     
     cout << file_name << endl;
@@ -128,13 +123,11 @@ void np_sjf_2(const vector<Process>& processes, string file_name) {
         return;
     }
 
-    // 1. Write the schedule from the log.
     for (const auto& entry : schedule_log) {
         schedule_file << "CPU" << entry.cpu_id << "\n" << "P" << entry.p_no << "," << entry.burst_no + 1
                       << "\t" << entry.start_time << "\t" << entry.end_time << "\n";
     }
 
-    // 2. Calculate and write the final statistics.
     double total_turnaround_time = 0;
     int max_turnaround_time = 0;
     for (const auto& p : local_processes) {

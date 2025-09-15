@@ -3,13 +3,12 @@
 #include <queue>
 #include <fstream>
 #include <iomanip>
-#include <chrono> // Required for timing
+#include <chrono>
 
 #include "algos.h"
 
 using namespace std;
 
-// Structs are moved here for self-containment, but could be in a shared header
 enum EventType { ARRIVAL, CPU_DONE, IO_DONE };
 
 struct Event {
@@ -37,7 +36,6 @@ void fifo_2(vector<Process>& processes, string file_name) {
     const int NUM_CPUS = 2;
     vector<ScheduleEntry2> schedule_log;
 
-    // --- Simulation Starts Here ---
     auto sim_start_timer = chrono::high_resolution_clock::now();
     
     int simulation_time = 0;
@@ -90,18 +88,15 @@ void fifo_2(vector<Process>& processes, string file_name) {
 
                 cpu_free_time[i] = finish_time;
                 event_queue.push({finish_time, p_to_run.p_no - 1, CPU_DONE, i});
-                
-                // Log the schedule entry instead of printing
+
                 schedule_log.push_back({i + 1, p_to_run.p_no, (p_to_run.current - 1) / 2, start_time, finish_time});
             }
         }
     }
 
     auto sim_end_timer = chrono::high_resolution_clock::now();
-    // --- Simulation Ends Here ---
-    
 
-    // --- All File I/O and Printing Happens Below ---
+    //File output
     chrono::duration<double, milli> elapsed_ms = sim_end_timer - sim_start_timer;
     
     cout << file_name << endl;
@@ -112,17 +107,17 @@ void fifo_2(vector<Process>& processes, string file_name) {
         return;
     }
 
-    // 1. Write the schedule from the log
+    //Write the schedule from the log
     for (const auto& entry : schedule_log) {
         schedule_file << "CPU" << entry.cpu_id << "\n" << "P" << entry.p_no << "," << entry.burst_no + 1
                       << "\t" << entry.start_time << "\t" << entry.end_time << "\n";
     }
 
-    // 2. Calculate and write the final statistics
+    //Calculate the final statistics
     double total_turnaround_time = 0;
     int max_turnaround_time = 0;
     for (const auto& p : processes) {
-        if(p.completed > 0) { // Ensure process was completed
+        if(p.completed > 0) { //Ensure that process was completed
             int turnaround = p.completed - p.arrival;
             total_turnaround_time += turnaround;
             if (turnaround > max_turnaround_time) {

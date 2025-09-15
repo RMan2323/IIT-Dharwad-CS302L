@@ -2,14 +2,13 @@
 #include <vector>
 #include <queue>
 #include <fstream>
-#include <chrono>    // Required for timing
-#include <iomanip>   // Required for formatting output
+#include <chrono>
+#include <iomanip>
 
 #include "algos.h"
 
 using namespace std;
 
-// Struct to log schedule entries in memory for later printing.
 struct ScheduleEntry {
     int p_no;
     int burst_no;
@@ -20,17 +19,14 @@ struct ScheduleEntry {
 class comp {
    public:
     bool operator()(const Process& p1, const Process& p2) {
-        // SJF compares the duration of the current CPU burst
         return p1.bursts[p1.current] > p2.bursts[p2.current];
     }
 };
 
 void np_sjf(const vector<Process>& processes, string file_name) {
-    // Make a mutable copy to track completion times and other state changes.
     vector<Process> local_processes = processes;
     vector<ScheduleEntry> schedule_log;
 
-    // --- Simulation Starts Here ---
     auto sim_start_timer = chrono::high_resolution_clock::now();
 
     priority_queue<Process, vector<Process>, comp> ready;
@@ -39,7 +35,6 @@ void np_sjf(const vector<Process>& processes, string file_name) {
     int done = 0;
 
     while (done != local_processes.size()) {
-        // Add all processes that have arrived by the current time to the ready queue.
         for (; not_arrived < local_processes.size();) {
             if (local_processes[not_arrived].arrival <= time) {
                 ready.push(local_processes[not_arrived]);
@@ -49,18 +44,17 @@ void np_sjf(const vector<Process>& processes, string file_name) {
             }
         }
 
-        // If the ready queue is empty, no process can run. Jump time to the next arrival.
+        //If the ready queue is empty, no process can run. Jump time to the next arrival
         if (ready.empty()) {
             if (not_arrived < local_processes.size()) {
                 time = local_processes[not_arrived].arrival;
             }
-            continue; // Restart the loop to add the newly arrived process
+            continue;
         }
 
         Process current = ready.top();
         ready.pop();
 
-        // If the process finished I/O after the current time, update time.
         if (current.start_when > time) {
             time = current.start_when;
         }
@@ -69,33 +63,29 @@ void np_sjf(const vector<Process>& processes, string file_name) {
         int duration = current.bursts[current.current];
         time += duration;
 
-        // Log the schedule entry to our in-memory vector.
         schedule_log.push_back({current.p_no, (current.current - 1) / 2, start_time, time - 1});
 
-        current.current++; // Move index past the CPU burst.
+        current.current++;
 
-        // Check if the process has an I/O burst to follow.
         if (current.current < current.bursts.size()) {
-            current.start_when = time + current.bursts[current.current]; // Set time it's ready after I/O
-            current.current++; // Move index past the I/O burst.
+            current.start_when = time + current.bursts[current.current];
+            current.current++;
             
-            // Re-queue the process for its next CPU burst, unless it's done.
             if (current.current < current.bursts.size()) {
                  ready.push(current);
-            } else { // Process ends after its final I/O.
+            } else {
                 local_processes[current.p_no - 1].completed = current.start_when;
                 done++;
             }
-        } else { // This was the final CPU burst.
+        } else {
             local_processes[current.p_no - 1].completed = time;
             done++;
         }
     }
 
     auto sim_end_timer = chrono::high_resolution_clock::now();
-    // --- Simulation Ends Here ---
 
-    // --- All File I/O and Printing Happens Below ---
+    //File output
     chrono::duration<double, milli> elapsed_ms = sim_end_timer - sim_start_timer;
 
     cout << file_name << endl;
@@ -106,14 +96,12 @@ void np_sjf(const vector<Process>& processes, string file_name) {
         return;
     }
 
-    // 1. Write the schedule from the log.
     schedule_file << "CPU1\n";
     for (const auto& entry : schedule_log) {
         schedule_file << "P" << entry.p_no << "," << entry.burst_no + 1
                       << "\t" << entry.start_time << "\t" << entry.end_time << "\n";
     }
 
-    // 2. Calculate and write the final statistics.
     double total_turnaround_time = 0;
     int max_turnaround_time = 0;
     for (const auto& p : local_processes) {
