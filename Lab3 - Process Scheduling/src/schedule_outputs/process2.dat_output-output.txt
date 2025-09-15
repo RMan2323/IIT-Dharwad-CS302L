@@ -1,0 +1,232 @@
+==================================================
+✅ FILENAME: schedule_fifo_2_process2.txt
+==================================================
+
+--- First 10 lines ---
+CPU1
+P1,1	0	5
+CPU2
+P2,1	1	4
+CPU1
+P3,1	6	16
+CPU2
+P2,2	6	9
+CPU2
+P2,3	11	14
+
+--- Last 10 lines ---
+P7,5	456	496
+CPU1
+P5,6	466	476
+CPU1
+P7,6	498	508
+
+--- Performance Metrics ---
+Simulator Runtime: 0.048 ms
+Average Turnaround Time: 260.167
+Maximum Turnaround Time: 482
+
+
+==================================================
+✅ FILENAME: schedule_fifo_process2.txt
+==================================================
+
+--- First 10 lines ---
+CPU1
+P1,1	0	4
+P2,1	5	7
+P2,2	10	12
+P2,3	15	17
+P3,1	18	27
+P4,1	28	30
+P8,1	31	33
+P4,2	34	36
+P11,1	37	39
+
+--- Last 10 lines ---
+P7,2	730	809
+P7,3	812	861
+P7,4	865	934
+P7,5	937	976
+P7,6	979	988
+
+--- Performance Metrics ---
+Simulator Runtime: 0.185 ms
+Average Turnaround Time: 165.167
+Maximum Turnaround Time: 963
+
+
+==================================================
+✅ FILENAME: schedule_np_sjf_2_process2.txt
+==================================================
+
+--- First 10 lines ---
+CPU1
+P1,1	0	4
+CPU1
+P2,1	5	7
+CPU1
+P2,2	10	12
+CPU2
+P3,1	8	17
+CPU1
+P2,3	15	17
+
+--- Last 10 lines ---
+P7,4	483	552
+CPU1
+P7,5	555	594
+CPU1
+P7,6	597	606
+
+--- Performance Metrics ---
+Simulator Runtime: 0.223 ms
+Average Turnaround Time: 134.056
+Maximum Turnaround Time: 581
+
+
+==================================================
+✅ FILENAME: schedule_np_sjf_process2.txt
+==================================================
+
+--- First 10 lines ---
+CPU1
+P1,1	0	4
+P2,1	5	7
+P2,2	10	12
+P2,3	15	17
+P3,1	18	27
+P4,1	28	30
+P8,1	31	33
+P4,2	34	36
+P11,1	37	39
+
+--- Last 10 lines ---
+P7,2	730	809
+P7,3	812	861
+P7,4	865	934
+P7,5	937	976
+P7,6	979	988
+
+--- Performance Metrics ---
+Simulator Runtime: 0.179 ms
+Average Turnaround Time: 165.167
+Maximum Turnaround Time: 963
+
+
+==================================================
+✅ FILENAME: schedule_p_sjf_2_process2.txt
+==================================================
+
+--- First 10 lines ---
+CPU1
+P1,1	0	0
+CPU1
+P2,1	1	3
+CPU2
+P1,1	1	4
+CPU2
+P2,2	6	8
+CPU1
+P3,1	6	10
+
+--- Last 10 lines ---
+P7,4	469	538
+CPU1
+P7,5	541	580
+CPU1
+P7,6	583	592
+
+--- Performance Metrics ---
+Simulator Runtime: 0.234 ms
+Average Turnaround Time: 92.000
+Maximum Turnaround Time: 567
+
+
+==================================================
+✅ FILENAME: schedule_p_sjf_process2.txt
+==================================================
+
+--- First 10 lines ---
+CPU1
+P1,1	0	0
+P2,1	1	3
+P1,1	4	5
+P3,1	6	6
+P2,2	7	9
+P1,1	10	11
+P2,3	12	14
+P3,1	15	22
+P4,1	23	23
+
+--- Last 10 lines ---
+P7,2	709	788
+P7,3	791	840
+P7,4	844	913
+P7,5	916	955
+P7,6	958	967
+
+--- Performance Metrics ---
+Simulator Runtime: 0.221 ms
+Average Turnaround Time: 161.944
+Maximum Turnaround Time: 942
+
+
+==================================================
+✅ FILENAME: schedule_rr_2_process2_quantum_2.txt
+==================================================
+
+--- First 10 lines ---
+CPU1
+P1,1	0	1
+CPU1
+P2,1	2	3
+CPU2
+P1,1	2	3
+CPU1
+P2,1	4	4
+CPU2
+P1,1	4	4
+
+--- Last 10 lines ---
+P7,6	521	522
+CPU1
+P7,6	523	524
+CPU1
+P7,6	525	526
+
+--- Performance Metrics ---
+Simulator Runtime: 1.137 ms
+Average Turnaround Time: 122.667
+Maximum Turnaround Time: 501
+
+
+==================================================
+✅ FILENAME: schedule_rr_process2_quantum_2.txt
+==================================================
+
+--- First 10 lines ---
+CPU1
+P1,1	0	1
+P2,1	2	3
+P1,1	4	5
+P2,1	6	6
+P3,1	7	8
+P1,1	9	9
+P2,2	10	11
+P3,1	12	13
+P2,2	14	14
+
+--- Last 10 lines ---
+P7,6	952	953
+P7,6	954	955
+P7,6	956	957
+P7,6	958	959
+P7,6	960	961
+
+--- Performance Metrics ---
+Simulator Runtime: 0.804 ms
+Average Turnaround Time: 248.389
+Maximum Turnaround Time: 936
+
+

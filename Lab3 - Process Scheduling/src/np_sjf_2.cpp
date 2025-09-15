@@ -34,7 +34,7 @@ class CPU {
     int finish_time = -1;
 };
 
-void np_sjf_2(const vector<Process>& processes) {
+void np_sjf_2(const vector<Process>& processes, string file_name) {
     // Make a mutable copy to track completion times and other state changes.
     vector<Process> local_processes = processes;
     vector<ScheduleEntry2> schedule_log;
@@ -120,7 +120,9 @@ void np_sjf_2(const vector<Process>& processes) {
     // --- All File I/O and Printing Happens Below ---
     chrono::duration<double, milli> elapsed_ms = sim_end_timer - sim_start_timer;
     
-    ofstream schedule_file("schedule_2.txt");
+    cout << file_name << endl;
+
+    ofstream schedule_file(file_name);
     if (!schedule_file.is_open()) {
         cerr << "Error: Could not open schedule_2.txt for writing." << endl;
         return;

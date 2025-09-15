@@ -13,14 +13,14 @@ int main(int argc, char **argv){
 	if(argc != 3){
 		cout << "Usage: ./a.out <algorithm> <path to .dat file>\n";
 		cout << "Algorithm can be one of the following:\n";
-		cout << "0) FIFO\n1) Non-Preemptive SJF\n2) Preemptive SJF\n3) Round Robin\n";
+		cout << "1) FIFO\n2) Non-Preemptive SJF\n3) Preemptive SJF\n4) Round Robin\n";
 		exit(-1);
 	}
 	
-	if(atoi(argv[1]) > 3 || atoi(argv[1]) < 0){
+	if(atoi(argv[1]) > 4 || atoi(argv[1]) < 1){
 		cout << "Invalid algorithm\n";
 		cout << "Algorithm can be one of the following:\n";
-		cout << "0) FIFO\n1) Non-Preemptive SJF\n2) Preemptive SJF\n3) Round Robin\n";
+		cout << "1) FIFO\n2) Non-Preemptive SJF\n3) Preemptive SJF\n4) Round Robin\n";
 		exit(-1);
 	}
 
@@ -69,28 +69,30 @@ int main(int argc, char **argv){
 
 // In scheduler.cpp, inside the switch case for FIFO
 
+	string process_file = argv[2];
+
 	switch(atoi(argv[1])){
-		case 0:
+		case 1:
 		// For Part I (1 CPU)
 		cout << "\n--- Running FIFO for 1 CPU ---" << endl;
-		fifo(process_arr); 
+		fifo(process_arr, "schedule_fifo_" + process_file.substr(2, process_file.length() - 6) + ".txt"); 
 
 		// For Part II (2 CPUs)
 		cout << "\n--- Running FIFO for 2 CPUs ---" << endl;
-		fifo_2(process_arr);
+		fifo_2(process_arr, "schedule_fifo_2_" + process_file.substr(2, process_file.length() - 6) + ".txt");
 		break;
 
 
-		case 1:
-			np_sjf(process_arr);
-			np_sjf_2(process_arr);
+		case 2:
+			np_sjf(process_arr, "schedule_np_sjf_" + process_file.substr(2, process_file.length() - 6) + ".txt");
+			np_sjf_2(process_arr, "schedule_np_sjf_2_" + process_file.substr(2, process_file.length() - 6) + ".txt");
 			break;
 
-		case 2:
+		case 3:
         cout << "\n--- Running Preemptive SJF for 1 CPU ---" << endl;
-        p_sjf(process_arr);
+        p_sjf(process_arr, "schedule_p_sjf_" + process_file.substr(2, process_file.length() - 6) + ".txt");
 
-        // Reset process state for the next simulation if needed
+		// Reset process state for the next simulation
         for(auto& p : process_arr) {
             p.current = 1;
             p.completed = -1;
@@ -99,15 +101,15 @@ int main(int argc, char **argv){
         }
 
         cout << "\n--- Running Preemptive SJF for 2 CPUs ---" << endl;
-        p_sjf_2(process_arr);
+        p_sjf_2(process_arr, "schedule_p_sjf_2_" + process_file.substr(2, process_file.length() - 6) + ".txt");
         break;
 
-		case 3:
+		case 4:
 			int quantum;
 			cout << "Enter time quantum: ";
 			cin >> quantum;
-			rr(process_arr, quantum);
-			rr_2(process_arr, quantum);
+			rr(process_arr, quantum, "schedule_rr_" + process_file.substr(2, process_file.length() - 6) + ".txt");
+			rr_2(process_arr, quantum, "schedule_rr_2_" + process_file.substr(2, process_file.length() - 6) + ".txt");
 			break;
 	}
     

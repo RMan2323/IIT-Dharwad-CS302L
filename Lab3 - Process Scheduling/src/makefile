@@ -1,6 +1,6 @@
 run-simulator: scheduler.out
 	@echo "Enter algorithm:";
-	@echo "0) FIFO\n1) Non-Preemptive SJF\n2) Preemptive SJF\n3) Round Robin\n";
+	@echo "1) FIFO\n2) Non-Preemptive SJF\n3) Preemptive SJF\n4) Round Robin\n";
 	@read -p "Choice: " c; \
 	read -p "Enter path to .dat file: " f; \
 	echo; \

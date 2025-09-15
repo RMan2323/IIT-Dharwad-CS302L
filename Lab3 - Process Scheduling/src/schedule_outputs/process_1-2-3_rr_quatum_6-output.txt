@@ -1,0 +1,174 @@
+==================================================
+✅ FILENAME: schedule_rr_2_process1_quantum_6.txt
+==================================================
+
+--- First 10 lines ---
+CPU1
+P1,1	0	5
+CPU1
+P2,1	6	11
+CPU2
+P3,1	6	11
+CPU1
+P4,1	12	17
+CPU2
+P5,1	12	14
+
+--- Last 10 lines ---
+P1,5	742	747
+CPU1
+P1,6	750	755
+CPU1
+P1,6	756	759
+
+--- Performance Metrics ---
+Simulator Runtime: 0.648 ms
+Average Turnaround Time: 445.857
+Maximum Turnaround Time: 760
+
+
+==================================================
+✅ FILENAME: schedule_rr_2_process2_quantum_6.txt
+==================================================
+
+--- First 10 lines ---
+CPU1
+P1,1	0	4
+CPU1
+P2,1	5	7
+CPU1
+P3,1	8	13
+CPU2
+P2,2	10	12
+CPU2
+P2,3	15	17
+
+--- Last 10 lines ---
+P7,5	506	509
+CPU1
+P7,6	512	517
+CPU1
+P7,6	518	521
+
+--- Performance Metrics ---
+Simulator Runtime: 0.420 ms
+Average Turnaround Time: 129.500
+Maximum Turnaround Time: 496
+
+
+==================================================
+✅ FILENAME: schedule_rr_2_process3_quantum_6.txt
+==================================================
+
+--- First 10 lines ---
+CPU1
+P1,1	0	5
+CPU1
+P2,1	6	11
+CPU2
+P3,1	6	11
+CPU1
+P1,1	12	17
+CPU2
+P4,1	12	17
+
+--- Last 10 lines ---
+P12,23	1061	1066
+CPU1
+P12,23	1067	1072
+CPU1
+P12,23	1073	1075
+
+--- Performance Metrics ---
+Simulator Runtime: 0.964 ms
+Average Turnaround Time: 621.667
+Maximum Turnaround Time: 1041
+
+
+==================================================
+✅ FILENAME: schedule_rr_process1_quantum_6.txt
+==================================================
+
+--- First 10 lines ---
+CPU1
+P1,1	0	5
+P2,1	6	11
+P3,1	12	17
+P4,1	18	23
+P5,1	24	26
+P6,1	27	31
+P1,1	32	37
+P7,1	38	43
+P2,1	44	49
+
+--- Last 10 lines ---
+P1,5	1399	1404
+P1,5	1405	1410
+P1,5	1411	1416
+P1,6	1419	1424
+P1,6	1425	1428
+
+--- Performance Metrics ---
+Simulator Runtime: 0.466 ms
+Average Turnaround Time: 877.143
+Maximum Turnaround Time: 1429
+
+
+==================================================
+✅ FILENAME: schedule_rr_process2_quantum_6.txt
+==================================================
+
+--- First 10 lines ---
+CPU1
+P1,1	0	4
+P2,1	5	7
+P3,1	8	13
+P2,2	14	16
+P3,1	17	20
+P2,3	21	23
+P3,2	24	29
+P4,1	30	32
+P5,1	33	38
+
+--- Last 10 lines ---
+P7,5	933	938
+P7,5	939	944
+P7,5	945	948
+P7,6	951	956
+P7,6	957	960
+
+--- Performance Metrics ---
+Simulator Runtime: 0.288 ms
+Average Turnaround Time: 258.389
+Maximum Turnaround Time: 935
+
+
+==================================================
+✅ FILENAME: schedule_rr_process3_quantum_6.txt
+==================================================
+
+--- First 10 lines ---
+CPU1
+P1,1	0	5
+P2,1	6	11
+P3,1	12	17
+P1,1	18	23
+P4,1	24	29
+P5,1	30	35
+P2,1	36	41
+P3,1	42	47
+P6,1	48	53
+
+--- Last 10 lines ---
+P12,22	2065	2070
+P12,22	2071	2073
+P12,23	2076	2081
+P12,23	2082	2087
+P12,23	2088	2090
+
+--- Performance Metrics ---
+Simulator Runtime: 0.705 ms
+Average Turnaround Time: 1226.917
+Maximum Turnaround Time: 2051
+
+

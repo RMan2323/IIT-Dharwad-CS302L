@@ -35,13 +35,13 @@ class Process{
     }
 };
 
-void fifo(const vector<Process>& processes);
-void fifo_2(vector<Process>& processes);
-void np_sjf(const vector<Process>& processes);
-void np_sjf_2(const vector<Process>& processes);
-void p_sjf(vector<Process>& processes);
-void p_sjf_2(vector<Process>& processes);
-void rr(const vector<Process>& processes, int quantum);
-void rr_2(const vector<Process>& processes, int quantum);
+void fifo(const vector<Process>& processes, string file_name);
+void fifo_2(vector<Process>& processes, string file_name);
+void np_sjf(const vector<Process>& processes, string file_name);
+void np_sjf_2(const vector<Process>& processes, string file_name);
+void p_sjf(vector<Process>& processes, string file_name);
+void p_sjf_2(vector<Process>& processes, string file_name);
+void rr(const vector<Process>& processes, int quantum, string file_name);
+void rr_2(const vector<Process>& processes, int quantum, string file_name);
 
 #endif

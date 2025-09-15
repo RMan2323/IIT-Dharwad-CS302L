@@ -30,7 +30,7 @@ struct CPU {
     int finish_time = -1;
 };
 
-void rr_2(const vector<Process>& processes, int quantum) {
+void rr_2(const vector<Process>& processes, int quantum, string file_name) {
     // Make a mutable copy to track completion times.
     vector<Process> local_processes = processes;
     vector<ScheduleEntry2> schedule_log;
@@ -127,7 +127,11 @@ void rr_2(const vector<Process>& processes, int quantum) {
     // --- All File I/O and Printing Happens Below ---
     chrono::duration<double, milli> elapsed_ms = sim_end_timer - sim_start_timer;
 
-    ofstream schedule_file("schedule_2.txt");
+    
+    string full_file_name = file_name.substr(0, file_name.length()-4) + "_quantum_" + to_string(quantum) + ".txt";
+    cout << full_file_name << endl;
+
+    ofstream schedule_file(full_file_name);
     if (!schedule_file.is_open()) {
         cerr << "Error: Could not open schedule_2.txt for writing." << endl;
         return;

@@ -33,7 +33,7 @@ struct ScheduleEntry2 {
 };
 
 
-void fifo_2(vector<Process>& processes) {
+void fifo_2(vector<Process>& processes, string file_name) {
     const int NUM_CPUS = 2;
     vector<ScheduleEntry2> schedule_log;
 
@@ -104,7 +104,9 @@ void fifo_2(vector<Process>& processes) {
     // --- All File I/O and Printing Happens Below ---
     chrono::duration<double, milli> elapsed_ms = sim_end_timer - sim_start_timer;
     
-    ofstream schedule_file("schedule_2.txt");
+    cout << file_name << endl;
+
+    ofstream schedule_file(file_name);
     if (!schedule_file.is_open()) {
         cerr << "Error: Could not open schedule_2.txt for writing." << endl;
         return;
