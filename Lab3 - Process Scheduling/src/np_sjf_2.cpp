@@ -128,7 +128,7 @@ void np_sjf_2(const vector<Process>& processes) {
 
     // 1. Write the schedule from the log.
     for (const auto& entry : schedule_log) {
-        schedule_file << "CPU" << entry.cpu_id << "\n" << "P" << entry.p_no << "," << entry.burst_no
+        schedule_file << "CPU" << entry.cpu_id << "\n" << "P" << entry.p_no << "," << entry.burst_no + 1
                       << "\t" << entry.start_time << "\t" << entry.end_time << "\n";
     }
 
