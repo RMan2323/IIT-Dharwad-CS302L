@@ -4,15 +4,14 @@
 #include <fstream>
 #include <algorithm>
 #include <limits>
-#include <chrono>  // Required for timing
-#include <iomanip> // Required for formatting output
+#include <chrono>
+#include <iomanip>
 
 #include "algos.h"
 #include <climits>
 
 using namespace std;
 
-// A struct to log schedule entries in memory for later printing.
 struct ScheduleEntry {
     int p_no;
     int burst_no;
@@ -20,7 +19,6 @@ struct ScheduleEntry {
     int end_time;
 };
 
-// Custom comparator for the ready queue (min-heap on remaining_time).
 struct CompareProcess {
     bool operator()(const Process* p1, const Process* p2) const {
         return p1->remaining_time > p2->remaining_time;
@@ -30,7 +28,6 @@ struct CompareProcess {
 void p_sjf(vector<Process>& processes, string file_name) {
     vector<ScheduleEntry> schedule_log;
 
-    // --- Simulation Starts Here ---
     auto sim_start_timer = chrono::high_resolution_clock::now();
 
     priority_queue<Process*, vector<Process*>, CompareProcess> ready_queue;
@@ -43,13 +40,11 @@ void p_sjf(vector<Process>& processes, string file_name) {
     int last_dispatch_time = 0;
 
     while (completed_processes < processes.size()) {
-        // 1. Add newly arrived processes to the ready queue.
         while (next_arrival_idx < processes.size() && processes[next_arrival_idx].arrival <= simulation_time) {
             ready_queue.push(&processes[next_arrival_idx]);
             next_arrival_idx++;
         }
 
-        // 2. Add processes finished with I/O to the ready queue.
         for (auto it = io_wait_list.begin(); it != io_wait_list.end(); ) {
             if ((*it)->start_when <= simulation_time) {
                 ready_queue.push(*it);
@@ -59,10 +54,10 @@ void p_sjf(vector<Process>& processes, string file_name) {
             }
         }
 
-        // 3. Scheduling Decision: Check for preemption.
+        //Check preemption
         if (running_process != nullptr && !ready_queue.empty()) {
             if (ready_queue.top()->remaining_time < running_process->remaining_time) {
-                // Preempt! Log the slice of work that was just done.
+                //Preempt and log the slice of work that was just done
                 if (simulation_time > last_dispatch_time) {
                     schedule_log.push_back({running_process->p_no, (running_process->current - 1) / 2, last_dispatch_time, simulation_time - 1});
                 }
@@ -71,18 +66,18 @@ void p_sjf(vector<Process>& processes, string file_name) {
             }
         }
         
-        // If CPU is idle, dispatch the shortest job.
+        //Give process to idle CPUs.
         if (running_process == nullptr && !ready_queue.empty()) {
             running_process = ready_queue.top();
             ready_queue.pop();
-            // If it's a new burst, set its remaining time from the main bursts list.
+            //If it's a new burst, set its remaining time from the main bursts list
             if (running_process->remaining_time == 0) {
                  running_process->remaining_time = running_process->bursts[running_process->current];
             }
             last_dispatch_time = simulation_time;
         }
 
-        // 4. Advance time. If idle, jump to the next event.
+        //Advance time and ff idle, jump to the next event
         if (running_process == nullptr) {
             int next_event_time = INT_MAX;
             if(next_arrival_idx < processes.size()) next_event_time = min(next_event_time, processes[next_arrival_idx].arrival);
@@ -94,32 +89,31 @@ void p_sjf(vector<Process>& processes, string file_name) {
         
         simulation_time++;
 
-        // 5. Update running process and handle burst completion.
+        //Update running process and handle burst completion
         if (running_process != nullptr) {
             running_process->remaining_time--;
             if (running_process->remaining_time == 0) {
-                // Log the final slice of work for this burst.
+                //Log the final slice of work for this burst
                 schedule_log.push_back({running_process->p_no, (running_process->current - 1) / 2, last_dispatch_time, simulation_time - 1});
                 
-                running_process->current++; // Move to I/O burst index
+                running_process->current++;
                 
                 if (running_process->current < running_process->bursts.size()) {
                     running_process->start_when = simulation_time + running_process->bursts[running_process->current];
                     io_wait_list.push_back(running_process);
-                    running_process->current++; // Move to next CPU burst index
+                    running_process->current++;
                 } else {
                     running_process->completed = simulation_time;
                     completed_processes++;
                 }
-                running_process = nullptr; // CPU is now idle
+                running_process = nullptr; //CPU is now idle
             }
         }
     }
 
     auto sim_end_timer = chrono::high_resolution_clock::now();
-    // --- Simulation Ends Here ---
 
-    // --- All File I/O and Printing Happens Below ---
+    //File output
     chrono::duration<double, milli> elapsed_ms = sim_end_timer - sim_start_timer;
 
     cout << file_name << endl;
@@ -130,14 +124,12 @@ void p_sjf(vector<Process>& processes, string file_name) {
         return;
     }
 
-    // 1. Write the schedule from the log.
     schedule_file << "CPU1\n";
     for (const auto& entry : schedule_log) {
         schedule_file << "P" << entry.p_no << "," << entry.burst_no + 1
                       << "\t" << entry.start_time << "\t" << entry.end_time << "\n";
     }
 
-    // 2. Calculate and write the final statistics.
     double total_turnaround_time = 0;
     int max_turnaround_time = 0;
     for (const auto& p : processes) {

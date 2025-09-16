@@ -2,14 +2,14 @@
 #include <vector>
 #include <queue>
 #include <fstream>
-#include <chrono>  // Required for timing
-#include <iomanip> // Required for formatting output
+#include <chrono>
+#include <iomanip>
 
 #include "algos.h"
 
 using namespace std;
 
-// Struct to log schedule entries in memory for later printing.
+//struct to log schedule entries in memory for later printing.
 struct ScheduleEntry {
     int p_no;
     int burst_no;
@@ -17,18 +17,18 @@ struct ScheduleEntry {
     int end_time;
 };
 
-// Struct to hold a process and its remaining burst time in the ready queue.
+//struct to hold a process and its remaining burst time in the ready queue
 struct RRItem {
     Process proc;
     int remaining;
 };
 
 void rr(const vector<Process>& processes, int quantum, string file_name) {
-    // Make a mutable copy to track completion times and other state changes.
+    //making a mutable copy to track completion times and other state changes
     vector<Process> local_processes = processes;
     vector<ScheduleEntry> schedule_log;
 
-    // --- Simulation Starts Here ---
+    //simulation start
     auto sim_start_timer = chrono::high_resolution_clock::now();
 
     queue<RRItem> ready;
@@ -36,18 +36,18 @@ void rr(const vector<Process>& processes, int quantum, string file_name) {
     int not_arrived = 0;
     int done = 0;
     
-    // Initial population of the ready queue
+    //init population of ready queue
     while (not_arrived < local_processes.size() && local_processes[not_arrived].arrival <= time) {
         ready.push({local_processes[not_arrived], local_processes[not_arrived].bursts[1]});
         not_arrived++;
     }
 
     while (done != local_processes.size()) {
-        // If ready queue is empty, jump time to the next arrival.
+        //when ready queue empty, jumping time to next arrival
         if (ready.empty()) {
             if (not_arrived < local_processes.size()) {
                 time = local_processes[not_arrived].arrival;
-                // Add all processes that have arrived by this new time.
+                //adding all processes that have arrived by new time
                 while (not_arrived < local_processes.size() && local_processes[not_arrived].arrival <= time) {
                     ready.push({local_processes[not_arrived], local_processes[not_arrived].bursts[1]});
                     not_arrived++;
@@ -64,32 +64,32 @@ void rr(const vector<Process>& processes, int quantum, string file_name) {
         int start_time = max(time, current.start_when);
         int run_time = min(quantum, item.remaining);
 
-        // Log the schedule entry to our in-memory vector.
+        //log the schedule entry to our in-memory vector
         schedule_log.push_back({current.p_no, burst_no, start_time, start_time + run_time - 1});
 
         time = start_time + run_time;
         item.remaining -= run_time;
 
-        // Add any processes that arrived during the run_time before handling the current one.
+        //adding any processes that arrived during the run_time before handling the current one
         while (not_arrived < local_processes.size() && local_processes[not_arrived].arrival <= time) {
             ready.push({local_processes[not_arrived], local_processes[not_arrived].bursts[1]});
             not_arrived++;
         }
 
         if (item.remaining > 0) {
-            // Burst not finished, put it back into the queue.
+            //burst not finished, put it back into the queue
             item.proc = current;
             ready.push(item);
         } else {
-            // Burst finished.
+            //burst finished
             current.current++;
             if (current.current < current.bursts.size()) {
-                // If there's an I/O burst, set its completion time and re-queue for the next CPU burst.
+                //if there's an I/O burst, set its completion time and re-queue for the next CPU burst
                 current.start_when = time + current.bursts[current.current];
                 current.current++;
                 ready.push({current, current.bursts[current.current]});
             } else {
-                // Process is complete.
+                //process complete
                 local_processes[current.p_no - 1].completed = time;
                 done++;
             }
@@ -97,9 +97,9 @@ void rr(const vector<Process>& processes, int quantum, string file_name) {
     }
 
     auto sim_end_timer = chrono::high_resolution_clock::now();
-    // --- Simulation Ends Here ---
+    //simulation ends
 
-    // --- All File I/O and Printing Happens Below ---
+    //file I/O and printing
     chrono::duration<double, milli> elapsed_ms = sim_end_timer - sim_start_timer;
 
     string full_file_name = file_name.substr(0, file_name.length()-4) + "_quantum_" + to_string(quantum) + ".txt";
@@ -111,14 +111,14 @@ void rr(const vector<Process>& processes, int quantum, string file_name) {
         return;
     }
 
-    // 1. Write the schedule from the log.
+    //writing schedule from log
     schedule_file << "CPU1\n";
     for (const auto& entry : schedule_log) {
         schedule_file << "P" << entry.p_no << "," << entry.burst_no + 1
                       << "\t" << entry.start_time << "\t" << entry.end_time << "\n";
     }
 
-    // 2. Calculate and write the final statistics.
+    //calculating and writing the final statistics
     double total_turnaround_time = 0;
     int max_turnaround_time = 0;
     for (const auto& p : local_processes) {
