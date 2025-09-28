@@ -35,7 +35,7 @@ int main(int argc, char **argv){
 	vector<vector<int>> processes;        //2D int arr to store .dat file
 
 	while(getline(f, s)){
-		if(s.find('<') == string::npos){  //if "<" is not found
+		if(s.find('<') == string::npos){
 			stringstream ss(s);           //convert line to stream
 			string p;                     //store the tokens in this before appending to vec
 			vector<int> process;          //temp vec to store tokens
@@ -47,7 +47,7 @@ int main(int argc, char **argv){
 			processes.push_back(process);
 		}
 
-		if(strstr(s.data(), end.data()))  //if "</pre>" is found
+		if(strstr(s.data(), end.data()))
 			break;
 	}
 
@@ -60,24 +60,21 @@ int main(int argc, char **argv){
 
 	cout << endl;
 
-	vector<Process> process_arr;	//vector of process objects
+	vector<Process> process_arr;
 
     for(int i = 0; i < processes.size(); i++){
-        Process p(processes[i], i); //convert process number i to process object
-        process_arr.push_back(p);   //push into the queue
+        Process p(processes[i], i);
+        process_arr.push_back(p); 
     }
 
-// In scheduler.cpp, inside the switch case for FIFO
 
 	string process_file = argv[2];
 
 	switch(atoi(argv[1])){
 		case 1:
-		// For Part I (1 CPU)
 		cout << "\n--- Running FIFO for 1 CPU ---" << endl;
 		fifo(process_arr, "schedule_fifo_" + process_file.substr(2, process_file.length() - 6) + ".txt"); 
 
-		// For Part II (2 CPUs)
 		cout << "\n--- Running FIFO for 2 CPUs ---" << endl;
 		fifo_2(process_arr, "schedule_fifo_2_" + process_file.substr(2, process_file.length() - 6) + ".txt");
 		break;
@@ -92,7 +89,6 @@ int main(int argc, char **argv){
         cout << "\n--- Running Preemptive SJF for 1 CPU ---" << endl;
         p_sjf(process_arr, "schedule_p_sjf_" + process_file.substr(2, process_file.length() - 6) + ".txt");
 
-		// Reset process state for the next simulation
         for(auto& p : process_arr) {
             p.current = 1;
             p.completed = -1;
