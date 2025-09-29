@@ -1,3 +1,5 @@
-.vscode/
 **/.vscode/
+**/*.exe
+**/*.out
+**/*.o
 Lab2 - Working with Processes/src/file.txt

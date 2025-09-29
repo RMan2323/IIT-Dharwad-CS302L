@@ -1,5 +1,7 @@
 #include <iostream>
 #include <fstream>
+#include <vector>
+#include "util.h"
 using namespace std;
 
 int main(int argc, char* argv[]){
@@ -51,11 +53,18 @@ int main(int argc, char* argv[]){
         return 1;
     }
 
+    vector<access> trace;
+
     string line;
+    access ac;
     while(getline(file, line, ',')){
         cout << "PID " << line << ", Addr ";
+        ac.pid = (int)stoi(line);
         getline(file, line);
         cout << line << "\n";
+        ac.va = (uint64_t)stoi(line);
+
+        trace.emplace_back(ac);
     }
 
     file.close();
