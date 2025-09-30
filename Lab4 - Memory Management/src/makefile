@@ -18,9 +18,9 @@ run-simulator: simulator.out
 	./mem_manager.out $$ps $$n $$rp $$ap ./$$f
 
 quick-run: simulator.out
-	./simulator.out 64 4 1 1 ./traces/combined_short.trace
+	./simulator.out 64 4 1 1 ../traces/combined_short.trace
 
-simulator.out:
+simulator.out: simulator.cpp
 	g++ simulator.cpp -o simulator.out
 
 clean:
