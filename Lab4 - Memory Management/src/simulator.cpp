@@ -62,10 +62,12 @@ int main(int argc, char* argv[]){
         ac.pid = (int)stoi(line);
         getline(file, line);
         cout << line << "\n";
-        ac.va = (uint64_t)stoi(line);
+        ac.va = (uint64_t)stol(line);
 
         trace.emplace_back(ac);
     }
+
+    frame* physicalMemory = new frame[numFrames];
 
     file.close();
 }
