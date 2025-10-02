@@ -67,7 +67,9 @@ int main(int argc, char* argv[]){
         trace.emplace_back(ac);
     }
 
-    frame* physicalMemory = new frame[numFrames];
+    physicalMemory = new frame[numFrames];
 
     file.close();
+
+    fifo_local(trace, pageSize, numFrames, physicalMemory);
 }
