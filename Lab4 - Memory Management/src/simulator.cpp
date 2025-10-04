@@ -4,8 +4,6 @@
 #include "util.h"
 using namespace std;
 
-frame* physicalMemory;
-
 int main(int argc, char* argv[]){
     if(argc != 6){
         cerr << "Usage: ./simulator.out <page size in bytes> <number of memory frames> <replacement policy> <allocation policy> <path to memory trace file>\n";
@@ -70,9 +68,8 @@ int main(int argc, char* argv[]){
     }
     // cout << "\n";
 
-    physicalMemory = new frame[numFrames];
-
     file.close();
 
-    fifo_local(trace, pageSize, numFrames, physicalMemory);
+    fifo_local(trace, pageSize, numFrames);
+    fifo_global(trace, pageSize, numFrames);
 }
