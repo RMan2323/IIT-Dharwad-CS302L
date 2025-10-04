@@ -15,13 +15,13 @@ run-simulator: simulator.out
 # 
 	read -p "Enter path to Memory Trace File: " f; \
 	echo; \
-	./mem_manager.out $$ps $$n $$rp $$ap ./$$f
+	./simulator.out $$ps $$n $$rp $$ap ./$$f
 
 quick-run: simulator.out
 	./simulator.out 64 4 1 1 ../traces/combined_short.trace
 
-simulator.out: simulator.cpp
-	g++ simulator.cpp -o simulator.out
+simulator.out: simulator.cpp util.h fifo_local.cpp
+	g++ simulator.cpp fifo_local.cpp -o simulator.out
 
 clean:
-	rm -f simulator.out
+	rm -f *.out

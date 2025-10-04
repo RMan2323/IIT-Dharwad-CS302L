@@ -18,6 +18,14 @@ class pageTable{
         maxLength = numFrames;
     }
 
+    void printTable(){
+        cout << "--- Table is: ---\n";
+        for(pair<int, int> p: table){
+            cout << p.first << "->" << p.second << "\n";
+        }
+        cout << "--- End of table ---\n\n";
+    }
+
     void enque(int pageNum){
         int frameNum = -1;
 
@@ -26,6 +34,7 @@ class pageTable{
             if(physicalMemory[i].status == 0){
                 physicalMemory[i].status = 1;
                 frameNum = i;
+                break;
             }
         }
 
@@ -59,16 +68,24 @@ void fifo_local(const vector<access>& trace, const int& pageSize, const int& num
     int pageBits = 64-log2(pageSize);
     int pageNum;
     for(access acc: trace){
+        for(int i = 0; i < numFrames; i++)  //maxLength is same as numFrames
+            // cout << "Frame " << i << " is " << physicalMemory[i].status << "\n";
+        
         //get the page number
         //find it in table
         //if not found, increase fault and push it into the table
 
         //number of upper bits required = log_2(2^64/pageSize) = 64-log_2(pageSize)
-
+        
+        // cout << acc.pid << "," << acc.va << "\n";
         pageNum = acc.va >> (64-pageBits);
         if(pTable[acc.pid].findFrame(pageNum) == -1){
+            // cout << "Page fault!!\n";
             faults++;
             pTable[acc.pid].enque(pageNum);
         }
+        // pTable[acc.pid].printTable();
     }
+
+    cout << "Number of page faults: " << faults;
 }

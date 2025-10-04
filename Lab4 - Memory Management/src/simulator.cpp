@@ -4,6 +4,8 @@
 #include "util.h"
 using namespace std;
 
+frame* physicalMemory;
+
 int main(int argc, char* argv[]){
     if(argc != 6){
         cerr << "Usage: ./simulator.out <page size in bytes> <number of memory frames> <replacement policy> <allocation policy> <path to memory trace file>\n";
@@ -58,14 +60,15 @@ int main(int argc, char* argv[]){
     string line;
     access ac;
     while(getline(file, line, ',')){
-        cout << "PID " << line << ", Addr ";
+        // cout << "PID " << line << ", Addr ";
         ac.pid = (int)stoi(line);
         getline(file, line);
-        cout << line << "\n";
-        ac.va = (uint64_t)stol(line);
+        // cout << line << "\n";
+        ac.va = (uint64_t)stoull(line);
 
         trace.emplace_back(ac);
     }
+    // cout << "\n";
 
     physicalMemory = new frame[numFrames];
 
