@@ -96,6 +96,6 @@ void fifo_local(const vector<access>& trace, const int& pageSize, const int& num
         }
         // pTable[acc.pid].printTable();
     }
-
+    delete[] physicalMemory;
     cout << "Number of page faults: " << faults << "\n";
 }
