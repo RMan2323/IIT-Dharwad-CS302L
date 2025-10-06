@@ -63,7 +63,7 @@ namespace fifo_local{
         }
     };
 
-    void fifo_local(const vector<access>& trace, const int& pageSize, const int& numFrames){
+    int fifo_local(const vector<access>& trace, const int& pageSize, const int& numFrames){
         int faults = 0;
 
         frame* physicalMemory = new frame[numFrames];  //physical memory implemented simply as an array of frames
@@ -94,6 +94,6 @@ namespace fifo_local{
             // pTable[acc.pid].printTable();
         }
         delete[] physicalMemory;
-        cout << "Number of page faults: " << faults << "\n";
+        return faults;
     }
 }

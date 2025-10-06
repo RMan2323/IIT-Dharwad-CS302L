@@ -39,14 +39,16 @@ class frame{
 };
 
 namespace fifo_local{
-    void fifo_local(const vector<access>& trace, const int& pageSize, const int& numFrames);
+    int fifo_local(const vector<access>& trace, const int& pageSize, const int& numFrames);
 }
 namespace fifo_global{
-    void fifo_global(const vector<access>& trace, const int& pageSize, const int& numFrames);
+    int fifo_global(const vector<access>& trace, const int& pageSize, const int& numFrames);
 }
-namespace lru_global
-{
-    void lru_global(const vector<access>& trace, const int& pageSize, const int& numFrames);
+namespace lru_global{
+    int lru_global(const vector<access>& trace, const int& pageSize, const int& numFrames);
+}
+namespace lru_local{
+    int lru_local(const vector<access>& trace, const int& pageSize, const int& numFrames);
 }
 
 #endif

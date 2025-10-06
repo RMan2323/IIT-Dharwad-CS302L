@@ -86,7 +86,7 @@ namespace fifo_global{
 
     vector<pageTable> pTable;
 
-    void fifo_global(const vector<access>& trace, const int& pageSize, const int& numFrames){
+    int fifo_global(const vector<access>& trace, const int& pageSize, const int& numFrames){
         int faults = 0;
 
         physicalMemory memory(numFrames);
@@ -109,6 +109,6 @@ namespace fifo_global{
             }
         }
 
-        cout << "Number of page faults: " << faults;
+        return faults;
     }
 }

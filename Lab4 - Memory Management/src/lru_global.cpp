@@ -117,7 +117,7 @@ namespace lru_global{
 
     vector<pageTable> pTable;
 
-    void lru_global(const vector<access>& trace, const int& pageSize, const int& numFrames){
+    int lru_global(const vector<access>& trace, const int& pageSize, const int& numFrames){
         int faults = 0;
 
         physicalMemory memory(numFrames);
@@ -130,7 +130,7 @@ namespace lru_global{
         uint64_t pageNum;
 
         for(access acc: trace){
-            memory.printLRU();
+            // memory.printLRU();
             pageNum = acc.va/pageSize;
             
             int frameNum = pTable[acc.pid].findFrame(pageNum, memory);
@@ -141,6 +141,6 @@ namespace lru_global{
             }
         }
 
-        cout << "Number of page faults: " << faults;
+        return faults;
     }
 }
