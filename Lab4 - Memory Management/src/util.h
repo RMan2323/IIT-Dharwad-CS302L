@@ -36,18 +36,17 @@ class frame{
         pageNum = 0;
         this->frameNum = frameNum;
     }
-
-    // frame(int frameNo, int pid, uint64_t pageNum){
-    //     status = 0;
-    //     timeTag = 0;
-    //     this->pid = pid;
-    //     pageNum = 0;
-    //     frameNum = frameNo;
-    // }
 };
 
-void fifo_local(const vector<access>& trace, const int& pageSize, const int& numFrames);
-namespace fifo_global{
-void fifo_global(const vector<access>& trace, const int& pageSize, const int& numFrames);
+namespace fifo_local{
+    void fifo_local(const vector<access>& trace, const int& pageSize, const int& numFrames);
 }
+namespace fifo_global{
+    void fifo_global(const vector<access>& trace, const int& pageSize, const int& numFrames);
+}
+namespace lru_global
+{
+    void lru_global(const vector<access>& trace, const int& pageSize, const int& numFrames);
+}
+
 #endif

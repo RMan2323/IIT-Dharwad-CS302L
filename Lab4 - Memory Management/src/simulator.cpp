@@ -70,6 +70,7 @@ int main(int argc, char* argv[]){
 
     file.close();
 
-    fifo_local(trace, pageSize, numFrames);
+    fifo_local::fifo_local(trace, pageSize, numFrames);
     fifo_global::fifo_global(trace, pageSize, numFrames);
+    lru_global::lru_global(trace, pageSize, numFrames);
 }
