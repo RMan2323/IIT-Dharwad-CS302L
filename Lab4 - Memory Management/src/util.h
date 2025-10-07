@@ -50,5 +50,10 @@ namespace lru_global{
 namespace lru_local{
     int lru_local(const vector<access>& trace, const int& pageSize, const int& numFrames);
 }
-
+namespace random_global{
+    int random_global(const vector<access>& trace, const int& pageSize, const int& numFrames);
+}
+namespace random_local{
+    int random_local(const vector<access>& trace, const int& pageSize, const int& numFrames);
+}
 #endif
