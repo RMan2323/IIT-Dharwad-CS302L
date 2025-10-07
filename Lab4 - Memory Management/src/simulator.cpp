@@ -74,4 +74,7 @@ int main(int argc, char* argv[]){
     cout << "FIFO Global faults:  " << fifo_global::fifo_global(trace, pageSize, numFrames) << "\n";
     cout << "LRU Local faults:    " << lru_local::lru_local(trace, pageSize, numFrames) << "\n";
     cout << "LRU Global faults:   " << lru_global::lru_global(trace, pageSize, numFrames) << "\n";
+    cout << "Random Global faults:   " << random_global::random_global(trace, pageSize, numFrames) << "\n";
+    // cerr << 78;
+    cout << "Random Local faults:   " << random_local::random_local(trace, pageSize, numFrames) << "\n";
 }
