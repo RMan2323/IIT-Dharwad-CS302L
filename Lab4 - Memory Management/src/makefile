@@ -14,8 +14,8 @@ run-simulator: simulator.out
 quick-run: simulator.out
 	./simulator.out 64 4 1 1 ../traces/combined_short.trace
 
-simulator.out: simulator.cpp util.h fifo_local.cpp fifo_global.cpp lru_local.cpp lru_global.cpp
-	g++ simulator.cpp fifo_local.cpp fifo_global.cpp lru_local.cpp lru_global.cpp -o simulator.out
+simulator.out: simulator.cpp util.h fifo_local.cpp fifo_global.cpp lru_local.cpp lru_global.cpp random_global.cpp random_local.cpp
+	g++ simulator.cpp fifo_local.cpp fifo_global.cpp lru_local.cpp lru_global.cpp random_global.cpp random_local.cpp -o simulator.out
 
 clean:
 	rm -f *.out
