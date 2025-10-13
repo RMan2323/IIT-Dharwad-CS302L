@@ -77,4 +77,6 @@ int main(int argc, char* argv[]){
     cout << "Random Global faults:   " << random_global::random_global(trace, pageSize, numFrames) << "\n";
     // cerr << 78;
     cout << "Random Local faults:   " << random_local::random_local(trace, pageSize, numFrames) << "\n";
+    cout << "Optimal Local faults:   " << optimal_local::optimal_local(trace, pageSize, numFrames) << "\n";
+    cout << "Optimal Global faults:  " << optimal_global::optimal_global(trace, pageSize, numFrames) << "\n";
 }

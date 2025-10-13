@@ -56,4 +56,10 @@ namespace random_global{
 namespace random_local{
     int random_local(const vector<access>& trace, const int& pageSize, const int& numFrames);
 }
+namespace optimal_global{
+    int optimal_global(const std::vector<access>& trace, const int& pageSize, const int& numFrames);
+}
+namespace optimal_local{
+    int optimal_local(const std::vector<access>& trace, const int& pageSize, const int& numFrames);
+}
 #endif
