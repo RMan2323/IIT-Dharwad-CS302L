@@ -29,7 +29,7 @@ int main(int argc, char* argv[]){
 
         return 1;
     }
-    if(4 > numFrames || numFrames > 64000){
+    if(4 > numFrames || numFrames > 65536){
         cerr << "Number of frames must be between 4 and 64K\n";
 
         return 1;
