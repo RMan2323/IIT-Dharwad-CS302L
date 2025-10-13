@@ -146,9 +146,9 @@ namespace lru_local{
         }
 
         // Print the per-process fault counts
-        cout << "    LRU Local Per-Process Faults:\n";
+        // cout << "    LRU Local Per-Process Faults:\n";
         for (int i = 0; i < 4; ++i) {
-            cout << "      Process " << i << ": " << perProcessFaults[i] << " faults\n";
+            cout << "      P" << i << ": " << perProcessFaults[i] << " \n";
         }
 
         return faults;

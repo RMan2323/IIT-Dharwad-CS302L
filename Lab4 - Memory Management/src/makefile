@@ -12,7 +12,7 @@ run-simulator: simulator.out
 	./simulator.out $$ps $$n $$rp $$ap ./$$f
 
 quick-run: simulator.out
-	./simulator.out 65536 64000 1 1 ../traces/combined.trace
+	./simulator.out 64 4 1 1 ../traces/combined.trace
 
 simulator.out: simulator.cpp util.h fifo_local.cpp fifo_global.cpp lru_local.cpp lru_global.cpp random_global.cpp random_local.cpp optimal_global.cpp optimal_local.cpp
 	g++ simulator.cpp fifo_local.cpp fifo_global.cpp lru_local.cpp lru_global.cpp random_global.cpp random_local.cpp optimal_global.cpp optimal_local.cpp -o simulator.out

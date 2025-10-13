@@ -29,7 +29,7 @@ int main(int argc, char* argv[]){
 
         return 1;
     }
-    if(4 > numFrames || numFrames > 65536){
+    if(4 > numFrames || numFrames > 64000){
         cerr << "Number of frames must be between 4 and 64K\n";
 
         return 1;
@@ -70,24 +70,40 @@ int main(int argc, char* argv[]){
 
     file.close();
 
+    int page_fault_count;
+    
     cout << "FIFO Local" << endl;
-    cout << "FIFO Local faults:   " << fifo_local::fifo_local(trace, pageSize, numFrames) << "\n";
+    page_fault_count = fifo_local::fifo_local(trace, pageSize, numFrames);
+    cout << "Total:   " << page_fault_count << endl << endl;
     
     cout << "FIFO Global" << endl;
-    cout << "FIFO Global faults:  " << fifo_global::fifo_global(trace, pageSize, numFrames) << "\n";
+    page_fault_count = fifo_global::fifo_global(trace, pageSize, numFrames);
+    cout << "Total:  " << page_fault_count << endl << endl;
+
+    cout << endl;
 
     cout << "LRU Local" << endl;
-    cout << "LRU Local faults:    " << lru_local::lru_local(trace, pageSize, numFrames) << "\n";
+    page_fault_count = lru_local::lru_local(trace, pageSize, numFrames);
+    cout << "Total:    " << page_fault_count << endl << endl;
     cout << "LRU Global" << endl;
-    cout << "LRU Global faults:   " << lru_global::lru_global(trace, pageSize, numFrames) << "\n";
+    page_fault_count = lru_global::lru_global(trace, pageSize, numFrames);
+    cout << "Total:   " << page_fault_count << endl << endl;
+
+    cout << endl;
 
     cout << "Random Local" << endl;
-    cout << "Random Local faults:   " << random_local::random_local(trace, pageSize, numFrames) << "\n";
+    page_fault_count = random_local::random_local(trace, pageSize, numFrames);
+    cout << "Total:   " << page_fault_count << endl << endl;
     cout << "Random Global" << endl;
-    cout << "Random Global faults:   " << random_global::random_global(trace, pageSize, numFrames) << "\n";
+    page_fault_count = random_global::random_global(trace, pageSize, numFrames);
+    cout << "Total:   " << page_fault_count << endl << endl;
+
+    cout << endl;
 
     cout << "Optimal Local" << endl;
-    cout << "Optimal Local faults:   " << optimal_local::optimal_local(trace, pageSize, numFrames) << "\n";
+    page_fault_count = optimal_local::optimal_local(trace, pageSize, numFrames);
+    cout << "Total:   " << page_fault_count << endl << endl;
     cout << "Optimal Global" << endl;
-    cout << "Optimal Global faults:  " << optimal_global::optimal_global(trace, pageSize, numFrames) << "\n";
+    page_fault_count = optimal_global::optimal_global(trace, pageSize, numFrames);
+    cout << "Total:  " << page_fault_count << endl << endl;
 }
