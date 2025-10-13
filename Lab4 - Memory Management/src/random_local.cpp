@@ -103,6 +103,8 @@ namespace random_local{
         // cerr << 103;
         uint64_t pageNum;
 
+        vector<int> perProcessFaults(4, 0); // Vector to store fault counts for each process
+
         for(access acc: trace){
             // cout << "\nNEW ACCESS STARTED\n" << endl;
             // cout << "ACCESSING PID:" << acc.pid << ":" << pageNum << endl;
@@ -118,10 +120,18 @@ namespace random_local{
             if(pTable[acc.pid].findFrame(pageNum) == -1){
                 // cout << "Page fault!!\n";
                 faults++;
+                perProcessFaults[acc.pid]++; // Increment fault count for the specific process
                 pTable[acc.pid].enque(pageNum, pTable);
             }
             // pTable[acc.pid].printTable();
         }
+
+        // Print the per-process fault counts
+        cout << "    Random Local Per-Process Faults:\n";
+        for (int i = 0; i < 4; ++i) {
+            cout << "      Process " << i << ": " << perProcessFaults[i] << " faults\n";
+        }
+
         // delete[] physicalMemory;
         return faults;
     }

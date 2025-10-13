@@ -129,6 +129,8 @@ namespace lru_global{
 
         uint64_t pageNum;
 
+        vector<int> perProcessFaults(4, 0); // Vector to store fault counts for each process
+
         for(access acc: trace){
             // memory.printLRU();
             pageNum = acc.va/pageSize;
@@ -137,8 +139,15 @@ namespace lru_global{
             if(frameNum == -1){
                 // cout << "Page fault\n";
                 faults++;
+                perProcessFaults[acc.pid]++; // Increment fault count for the specific process
                 pTable[acc.pid].enque(pageNum, pTable, memory);
             }
+        }
+
+        // Print the per-process fault counts
+        cout << "    LRU Global Per-Process Faults:\n";
+        for (int i = 0; i < 4; ++i) {
+            cout << "      Process " << i << ": " << perProcessFaults[i] << " faults\n";
         }
 
         return faults;
