@@ -6,7 +6,7 @@ namespace optimal_global {
 
     class physicalMemory {
     public:
-        std::vector<frame> memoryVec;
+        vector<frame> memoryVec;
 
         physicalMemory(int numFrames) {
             memoryVec.reserve(numFrames);
@@ -19,7 +19,7 @@ namespace optimal_global {
     class pageTable {
     public:
         int pid;
-        std::vector<std::pair<uint64_t, int>> table; // pageNum -> frameNum
+        vector<pair<uint64_t, int>> table; // pageNum -> frameNum
         int maxLength;
 
         pageTable(int pid, int numFrames) {
@@ -45,8 +45,8 @@ namespace optimal_global {
             }
         }
 
-        void enque(uint64_t pageNum, std::vector<pageTable>& pTable, physicalMemory& memory,
-                   int current_trace_idx, const std::vector<access>& trace, int pageSize) {
+        void enque(uint64_t pageNum, vector<pageTable>& pTable, physicalMemory& memory,
+                   int current_trace_idx, const vector<access>& trace, int pageSize) {
             
             // 1. Find a free frame first
             int frameNum = -1;
@@ -102,14 +102,16 @@ namespace optimal_global {
         }
     };
 
-    int optimal_global(const std::vector<access>& trace, const int& pageSize, const int& numFrames) {
+    int optimal_global(const vector<access>& trace, const int& pageSize, const int& numFrames) {
         int faults = 0;
         physicalMemory memory(numFrames);
-        std::vector<pageTable> pTable;
+        vector<pageTable> pTable;
         pTable.reserve(4);
         for (int i = 0; i < 4; i++) {
             pTable.emplace_back(i, numFrames);
         }
+
+        vector<int> perProcessFaults(4, 0); // Vector to store fault counts for each process
 
         for (int i = 0; i < trace.size(); ++i) {
             const auto& acc = trace[i];
@@ -118,8 +120,15 @@ namespace optimal_global {
             int frameNum = pTable[acc.pid].findFrame(pageNum);
             if (frameNum == -1) {
                 faults++;
+                perProcessFaults[acc.pid]++; // Increment fault count for the specific process
                 pTable[acc.pid].enque(pageNum, pTable, memory, i, trace, pageSize);
             }
+        }
+
+        // Print the per-process fault counts
+        cout << "    Optimal Global Per-Process Faults:\n";
+        for (int i = 0; i < 4; ++i) {
+            cout << "      Process " << i << ": " << perProcessFaults[i] << " faults\n";
         }
 
         return faults;

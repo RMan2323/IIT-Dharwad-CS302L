@@ -6,7 +6,7 @@ namespace optimal_local {
 
     class pageTable {
     private:
-        std::vector<std::pair<uint64_t, int>> table; // pageNum -> frameNum
+        vector<pair<uint64_t, int>> table; // pageNum -> frameNum
         int maxLength;
         int pid;
         frame* physicalMemory;
@@ -36,7 +36,7 @@ namespace optimal_local {
             }
         }
 
-        void enque(uint64_t pageNum, int current_trace_idx, const std::vector<access>& trace, int pageSize) {
+        void enque(uint64_t pageNum, int current_trace_idx, const vector<access>& trace, int pageSize) {
             int frameNum = -1;
             int frameStart = maxLength * pid;
             int frameEnd = frameStart + maxLength;
@@ -91,17 +91,19 @@ namespace optimal_local {
         }
     };
 
-    int optimal_local(const std::vector<access>& trace, const int& pageSize, const int& numFrames) {
+    int optimal_local(const vector<access>& trace, const int& pageSize, const int& numFrames) {
         int faults = 0;
         frame* physicalMemory = new frame[numFrames];
         for (int i = 0; i < numFrames; i++) {
             physicalMemory[i].frameNum = i;
         }
 
-        std::vector<pageTable> pTable;
+        vector<pageTable> pTable;
         for (int i = 0; i < 4; i++) {
             pTable.emplace_back(i, numFrames, physicalMemory);
         }
+
+        vector<int> perProcessFaults(4, 0); // Vector to store fault counts for each process
 
         for (int i = 0; i < trace.size(); ++i) {
             const auto& acc = trace[i];
@@ -109,10 +111,17 @@ namespace optimal_local {
 
             if (pTable[acc.pid].findFrame(pageNum) == -1) {
                 faults++;
+                perProcessFaults[acc.pid]++; // Increment fault count for the specific process
                 pTable[acc.pid].enque(pageNum, i, trace, pageSize);
             }
         }
         
+        // Print the per-process fault counts
+        cout << "    Optimal Local Per-Process Faults:\n";
+        for (int i = 0; i < 4; ++i) {
+            cout << "      Process " << i << ": " << perProcessFaults[i] << " faults\n";
+        }
+
         delete[] physicalMemory;
         return faults;
     }

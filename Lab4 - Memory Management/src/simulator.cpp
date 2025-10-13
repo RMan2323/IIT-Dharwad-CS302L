@@ -70,13 +70,24 @@ int main(int argc, char* argv[]){
 
     file.close();
 
+    cout << "FIFO Local" << endl;
     cout << "FIFO Local faults:   " << fifo_local::fifo_local(trace, pageSize, numFrames) << "\n";
+    
+    cout << "FIFO Global" << endl;
     cout << "FIFO Global faults:  " << fifo_global::fifo_global(trace, pageSize, numFrames) << "\n";
+
+    cout << "LRU Local" << endl;
     cout << "LRU Local faults:    " << lru_local::lru_local(trace, pageSize, numFrames) << "\n";
+    cout << "LRU Global" << endl;
     cout << "LRU Global faults:   " << lru_global::lru_global(trace, pageSize, numFrames) << "\n";
-    cout << "Random Global faults:   " << random_global::random_global(trace, pageSize, numFrames) << "\n";
-    // cerr << 78;
+
+    cout << "Random Local" << endl;
     cout << "Random Local faults:   " << random_local::random_local(trace, pageSize, numFrames) << "\n";
+    cout << "Random Global" << endl;
+    cout << "Random Global faults:   " << random_global::random_global(trace, pageSize, numFrames) << "\n";
+
+    cout << "Optimal Local" << endl;
     cout << "Optimal Local faults:   " << optimal_local::optimal_local(trace, pageSize, numFrames) << "\n";
+    cout << "Optimal Global" << endl;
     cout << "Optimal Global faults:  " << optimal_global::optimal_global(trace, pageSize, numFrames) << "\n";
 }
