@@ -2,6 +2,7 @@
 #include <fstream>
 #include <vector>
 #include "util.h"
+
 using namespace std;
 
 int main(int argc, char* argv[]){
@@ -70,8 +71,46 @@ int main(int argc, char* argv[]){
 
     file.close();
 
-    cout << "FIFO Local faults:   " << fifo_local::fifo_local(trace, pageSize, numFrames) << "\n";
-    cout << "FIFO Global faults:  " << fifo_global::fifo_global(trace, pageSize, numFrames) << "\n";
-    cout << "LRU Local faults:    " << lru_local::lru_local(trace, pageSize, numFrames) << "\n";
-    cout << "LRU Global faults:   " << lru_global::lru_global(trace, pageSize, numFrames) << "\n";
+    int page_fault_count = 0;
+
+    // Use the command-line arguments to select which simulation to run.
+    if (allocPolicy == 1) { // Global Allocation
+        if (repPolicy == 1) { // Optimal
+            cout << "Optimal Global" << endl;
+            page_fault_count = optimal_global::optimal_global(trace, pageSize, numFrames);
+            cout << "Total: " << page_fault_count << endl;
+        } else if (repPolicy == 2) { // FIFO
+            cout << "FIFO Global" << endl;
+            page_fault_count = fifo_global::fifo_global(trace, pageSize, numFrames);
+            cout << "Total: " << page_fault_count << endl;
+        } else if (repPolicy == 3) { // LRU
+            cout << "LRU Global" << endl;
+            page_fault_count = lru_global::lru_global(trace, pageSize, numFrames);
+            cout << "Total: " << page_fault_count << endl;
+        } else if (repPolicy == 4) { // Random
+            cout << "Random Global" << endl;
+            page_fault_count = random_global::random_global(trace, pageSize, numFrames);
+            cout << "Total: " << page_fault_count << endl;
+        }
+    } else { // allocPolicy == 2 -> Local Allocation
+        if (repPolicy == 1) { // Optimal
+            cout << "Optimal Local" << endl;
+            page_fault_count = optimal_local::optimal_local(trace, pageSize, numFrames);
+            cout << "Total: " << page_fault_count << endl;
+        } else if (repPolicy == 2) { // FIFO
+            cout << "FIFO Local" << endl;
+            page_fault_count = fifo_local::fifo_local(trace, pageSize, numFrames);
+            cout << "Total: " << page_fault_count << endl;
+        } else if (repPolicy == 3) { // LRU
+            cout << "LRU Local" << endl;
+            page_fault_count = lru_local::lru_local(trace, pageSize, numFrames);
+            cout << "Total: " << page_fault_count << endl;
+        } else if (repPolicy == 4) { // Random
+            cout << "Random Local" << endl;
+            page_fault_count = random_local::random_local(trace, pageSize, numFrames);
+            cout << "Total: " << page_fault_count << endl;
+        }
+    }
+
+    return 0;
 }
