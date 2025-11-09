@@ -5,18 +5,30 @@
 #include <iomanip>
 #include <unistd.h>
 
+#define NUM_REPEATS 100
+
 using namespace std;
 
-void S1_smoothen(struct image_t *input_image, int s1s2[])
+uint32_t hsh(const uint8_t v[3]){
+	uint32_t x = (v[0] << 16) | (v[1] << 8) | v[2];
+	x ^= (x >> 13);
+	x *= 0x85ebca6b;
+	x ^= (x >> 16);
+	
+	return x;
+}
+
+void S1_smoothen(const struct image_t *input_image, const int s1s2[])
 {
 	uint8_t pixel[3];
+	uint32_t h;
 	
-	//int count = 0;
-	//while(count < 1000){
-	//count++;
-	for(int i = 0; i < (input_image->height)-1; i++)
+	int count = 0;
+	while(count < NUM_REPEATS){
+	count++;
+	for(int i = 0; i < (input_image->height); i++)
 	{
-		for(int j = 0; j < (input_image->width)-1; j++)
+		for(int j = 0; j < (input_image->width); j++)
 		{
 			for(int k = 0; k < 3; k++)
 			{
@@ -35,50 +47,72 @@ void S1_smoothen(struct image_t *input_image, int s1s2[])
 				}
 				pixel[k] = result;
 			}
-			if(write(s1s2[1], pixel, 3*sizeof(uint8_t)) < 0){  //give the [i,j]th pixel value to next process
+			h = hsh(pixel);
+			if(write(s1s2[1], &h, sizeof(uint32_t)) < 0 || write(s1s2[1], pixel, 3*sizeof(uint8_t)) < 0){  //give the [i,j]th pixel value to next process
 				perror("s1 pixel write");
 				exit(EXIT_FAILURE);
-			} else cout << "s1 wrote\n";
+			}
 		}
 	}
-	//}
+	}
 
 	
 }
 
-void S2_find_details(struct image_t *input_image, int s1s2[], int s2s3[])
+void S2_find_details(const struct image_t *input_image, const int s1s2[], const int s2s3[])
 {
 	uint8_t incomingPixel[3], outgoingPixel[3];
+	uint32_t incomingH, outgoingH;
 	
-	//int count = 0;
-	//while(count < 1000){
-	//count++;
-	for(int i = 0; i < (input_image->height)-1; i++)
+	int count = 0;
+	while(count < NUM_REPEATS){
+	count++;
+	for(int i = 0; i < (input_image->height); i++)
 	{
-		for(int j = 0; j < (input_image->width)-1; j++)
+		for(int j = 0; j < (input_image->width); j++)
 		{
-			if(read(s1s2[0], incomingPixel, 3*sizeof(uint8_t)) < 0){  //take the [i,j]th pixel value from the prev. process
+			if(read(s1s2[0], &incomingH, sizeof(uint32_t)) < 0 || read(s1s2[0], incomingPixel, 3*sizeof(uint8_t)) < 0){  //take the [i,j]th pixel value from the prev. process
 				perror("s2 pixel read");
 				exit(EXIT_FAILURE);
-			} else cout << "s2 read\n";
+			}
+			if(hsh(incomingPixel) != incomingH){
+				perror("s1s2 hash mismatch");
+				//cout << hsh(incomingPixel) << " " << incomingH << "\n";
+				exit(EXIT_FAILURE);
+			}
+			
+			if(i == 0 || i == input_image->height-1 || j == 0 || j == input_image->width-1){
+				outgoingPixel[0] = 0;
+				outgoingPixel[1] = 0;
+				outgoingPixel[2] = 0;
+				outgoingH = hsh(outgoingPixel);
+				if(write(s2s3[1], &outgoingH, sizeof(uint32_t)) < 0 || write(s2s3[1], outgoingPixel, 3*sizeof(uint8_t)) < 0){  //give the [i,j]th pixel value to next process
+					perror("s2 pixel write");
+					exit(EXIT_FAILURE);
+				}
+				continue;
+			}
+				
 			for(int k = 0; k < 3; k++)
 			{
-				short res = input_image->image_pixels[i][j][k] - incomingPixel[3];
+				short res = input_image->image_pixels[i][j][k] - incomingPixel[k];
 				if(res < 0) outgoingPixel[k] = 0;
 				else outgoingPixel[k] = res;
 			}
-			if(write(s2s3[1], outgoingPixel, 3*sizeof(uint8_t)) < 0){  //give the [i,j]th pixel value to next process
+			outgoingH = hsh(outgoingPixel);
+			if(write(s2s3[1], &outgoingH, sizeof(uint32_t)) < 0 || write(s2s3[1], outgoingPixel, 3*sizeof(uint8_t)) < 0){  //give the [i,j]th pixel value to next process
 				perror("s2 pixel write");
 				exit(EXIT_FAILURE);
-			} else cout << "s2 wrote\n";
+			}
 		}
 	}
-	//}
+	}
 }
 
-struct image_t* S3_sharpen(struct image_t *input_image, int s2s3[])
+struct image_t* S3_sharpen(const struct image_t *input_image, const int s2s3[])
 {
 	uint8_t pixel[3];
+	uint32_t h;
 	
 	struct image_t* finalImage = new struct image_t;
 	
@@ -94,17 +128,29 @@ struct image_t* S3_sharpen(struct image_t *input_image, int s2s3[])
 			finalImage->image_pixels[i][j] = new uint8_t[3];
 	}
 	
-	//int count = 0;
-	//while(count < 1000){
-	//count++;
-	for(int i = 0; i < (finalImage->height)-1; i++)
+	int count = 0;
+	while(count < NUM_REPEATS){
+	count++;
+	for(int i = 0; i < (finalImage->height); i++)
 	{
-		for(int j = 0; j < (finalImage->width)-1; j++)
+		for(int j = 0; j < (finalImage->width); j++)
 		{
-			if(read(s2s3[0], pixel, 3*sizeof(uint8_t)) < 0){  //take the [i,j]th pixel value from the prev. process
+			if(read(s2s3[0], &h, sizeof(uint32_t)) < 0 || read(s2s3[0], pixel, 3*sizeof(uint8_t)) < 0){  //take the [i,j]th pixel value from the prev. process
 				perror("s3 pixel read");
 				exit(EXIT_FAILURE);
-			} else cout << "s3 read\n";
+			}
+			if(h != hsh(pixel)){
+				perror("s2s3 hash mismatch");
+				exit(EXIT_FAILURE);
+			}
+			
+			if(i == 0 || i == input_image->height-1 || j == 0 || j == input_image->width-1){
+				finalImage->image_pixels[i][j][0] = 0;
+				finalImage->image_pixels[i][j][1] = 0;
+				finalImage->image_pixels[i][j][2] = 0;
+				
+				continue;
+			}
 			
 			for(int k = 0; k < 3; k++)
 			{
@@ -114,7 +160,7 @@ struct image_t* S3_sharpen(struct image_t *input_image, int s2s3[])
 			}
 		}
 	}
-	//}
+	}
 	return finalImage;
 }
 
@@ -162,8 +208,16 @@ int main(int argc, char **argv)
 		} else{  //s3 runs here
 			close(s2s3[1]);  //close unused write end of s2s3
 			struct image_t *sharpened_image = S3_sharpen(input_image, s2s3);  //sharpen
+			uint8_t check;
+			if(read(s2s3[0], &check, sizeof(uint8_t)) < 0){  //take the [i,j]th pixel value from the prev. process
+				perror("pipe full at end");
+				exit(EXIT_FAILURE);
+			}
+			
 			close(s2s3[0]);  //close read end of s2s3
 			write_ppm_file(argv[2], sharpened_image);  //write file
+			
+			
 		}
 	}
 }
