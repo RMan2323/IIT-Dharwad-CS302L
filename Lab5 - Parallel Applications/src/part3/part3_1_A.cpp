@@ -1,0 +1,268 @@
+#include <iostream>
+#include <string>
+#include <cstring>
+#include <chrono>
+#include <iomanip>
+#include <cmath>
+#include <cstdint>
+#include "libppm.h" // Must be in the same directory
+
+// Socket programming headers
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+
+using namespace std;
+
+// --- Constants ---
+const int CHUNK_ROWS_N = 10; // Batch size (N rows)
+const int NUM_RUNS = 1000;
+
+// --- Data Structures ---
+// This header is sent before each batch of pixel data
+struct PacketHeader {
+    int run_id;
+    int start_row;
+    int num_rows;
+    int width;
+    uint32_t batch_hash;
+};
+
+// --- Global Image ---
+image_t* g_input_image = nullptr;
+
+// --- Hashing Function ---
+uint32_t hsh(const uint8_t v[3]){
+    uint32_t x = (v[0] << 16) | (v[1] << 8) | v[2];
+    x ^= (x >> 13);
+    x *= 0x85ebca6b;
+    x ^= (x >> 16);
+    return x;
+}
+
+// Calculates hash for a flat buffer of pixel data
+// --- FIX: This function now skips borders, matching part2_1.cpp ---
+uint32_t calculate_batch_hash(const uint8_t* buffer, int start_row, int num_rows, int width, int img_height) {
+    uint32_t combined_hash = 0;
+    for (int i = 0; i < num_rows; i++) {
+        int current_row = start_row + i;
+        if (current_row == 0 || current_row == img_height - 1) continue; // Skip border rows
+
+        for (int j = 0; j < width; j++) {
+            if (j == 0 || j == width - 1) continue; // Skip border cols
+            
+            combined_hash ^= hsh(&buffer[(i * width + j) * 3]);
+        }
+    }
+    return combined_hash;
+}
+
+// --- Reliable Socket I/O ---
+// Loops to send the exact number of bytes
+ssize_t send_all(int fd, const void *buf, size_t len) {
+    const char *p = (const char*)buf;
+    size_t total = 0;
+    while (total < len) {
+        ssize_t n = send(fd, p + total, len - total, 0);
+        if (n == -1) { 
+            perror("send"); 
+            return -1; 
+        }
+        total += n;
+    }
+    return total;
+}
+
+// --- Socket Setup ---
+int setup_server_socket(const char *port) {
+    struct addrinfo hints, *res, *rp;
+    int sfd, connfd, s;
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;     // Allow IPv4 or IPv6
+    hints.ai_socktype = SOCK_STREAM; // TCP socket
+    hints.ai_flags = AI_PASSIVE;     // For wildcard IP address
+
+    s = getaddrinfo(NULL, port, &hints, &res);
+    if (s != 0) {
+        cerr << "getaddrinfo: " << gai_strerror(s) << endl;
+        return -1;
+    }
+
+    // Try each address until we successfully bind
+    for (rp = res; rp != NULL; rp = rp->ai_next) {
+        sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+        if (sfd == -1) continue;
+
+        int yes = 1;
+        if (setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1) {
+            perror("setsockopt");
+            close(sfd);
+            continue;
+        }
+
+        if (bind(sfd, rp->ai_addr, rp->ai_addrlen) == 0)
+            break; // Success
+
+        close(sfd);
+    }
+
+    freeaddrinfo(res); // No longer needed
+
+    if (rp == NULL) {
+        cerr << "Could not bind to any address" << endl;
+        return -1;
+    }
+
+    if (listen(sfd, 1) == -1) {
+        perror("listen");
+        return -1;
+    }
+
+    cout << "Server: waiting for connection on port " << port << "..." << endl;
+    connfd = accept(sfd, NULL, NULL);
+    if (connfd == -1) {
+        perror("accept");
+        return -1;
+    }
+    
+    close(sfd); // We only accept one client, so close listening socket
+    cout << "Server: client connected." << endl;
+    return connfd;
+}
+
+// --- Memory Management ---
+void delete_image(image_t* img) {
+    if (img == nullptr) return;
+    for (int i = 0; i < img->height; i++) {
+        for (int j = 0; j < img->width; j++) {
+            delete[] img->image_pixels[i][j];
+        }
+        delete[] img->image_pixels[i];
+    }
+    delete[] img->image_pixels;
+    delete img;
+}
+
+// --- Main Program ---
+int main(int argc, char **argv) {
+    if (argc != 3) {
+        cout << "Usage: ./part3_1_A <path-to-input-image> <port>\n";
+        return 1;
+    }
+
+    string input_path = argv[1];
+    const char *port = argv[2];
+
+    // Read input image
+    g_input_image = read_ppm_file(const_cast<char*>(input_path.c_str()));
+    if (g_input_image == nullptr) {
+        cerr << "Failed to read input image: " << input_path << endl;
+        return 1;
+    }
+    cout << "Server: Image read. " << g_input_image->width << "x" << g_input_image->height << endl;
+
+    int height = g_input_image->height;
+    int width = g_input_image->width;
+
+    // Setup network connection
+    int connfd = setup_server_socket(port);
+    if (connfd == -1) {
+        cerr << "Server: Failed to setup socket." << endl;
+        return 1;
+    }
+
+    // Allocate flat buffers for processing
+    // We only need N rows at a time
+    int max_batch_pixels = CHUNK_ROWS_N * width;
+    uint8_t* s1_flat_buffer = new uint8_t[max_batch_pixels * 3];
+    uint8_t* s2_flat_buffer = new uint8_t[max_batch_pixels * 3];
+
+    PacketHeader header;
+    auto start_total = chrono::steady_clock::now();
+
+    // --- FIX: Declare timing variables before goto-able scope ---
+    auto stop_total = start_total;
+    chrono::duration<double> total_time(0.0);
+
+    for (int run = 0; run < NUM_RUNS; run++) {
+        for (int i = 0; i < height; i += CHUNK_ROWS_N) {
+            int num_rows_in_batch = min(CHUNK_ROWS_N, height - i);
+
+            // --- S1 (Smoothen) Logic ---
+            for (int k = 0; k < num_rows_in_batch; k++) {
+                int current_row = i + k;
+                for (int j = 0; j < width; j++) {
+                    uint8_t* s1_pixel = &s1_flat_buffer[(k * width + j) * 3];
+                    if (current_row > 0 && current_row < height - 1 && j > 0 && j < width - 1) {
+                        for (int c = 0; c < 3; c++) {
+                            uint8_t result = 0;
+                            for (int l = -1; l < 2; l++) {
+                                for (int m = -1; m < 2; m++) {
+                                    result += g_input_image->image_pixels[current_row - l][j - m][c] / 9;
+                                }
+                            }
+                            s1_pixel[c] = result;
+                        }
+                    } else {
+                        // FIX: Explicitly set border pixels to 0
+                        memset(s1_pixel, 0, 3);
+                    }
+                }
+            }
+
+            // --- S2 (Details) Logic ---
+            for (int k = 0; k < num_rows_in_batch; k++) {
+                int current_row = i + k;
+                for (int j = 0; j < width; j++) {
+                    uint8_t* s1_pixel = &s1_flat_buffer[(k * width + j) * 3];
+                    uint8_t* s2_pixel = &s2_flat_buffer[(k * width + j) * 3];
+                    if (current_row > 0 && current_row < height - 1 && j > 0 && j < width - 1) {
+                        for (int c = 0; c < 3; c++) {
+                            short res = (short)g_input_image->image_pixels[current_row][j][c] - (short)s1_pixel[c];
+                            s2_pixel[c] = (res < 0) ? 0 : (uint8_t)res;
+                        }
+                    } else {
+                        // FIX: Explicitly set border pixels to 0
+                        memset(s2_pixel, 0, 3);
+                    }
+                }
+            }
+
+            // --- Send S2 Data ---
+            header.run_id = run;
+            header.start_row = i;
+            header.num_rows = num_rows_in_batch;
+            header.width = width;
+            // --- FIX: Pass correct arguments to new hash function ---
+            header.batch_hash = calculate_batch_hash(s2_flat_buffer, i, num_rows_in_batch, width, height);
+
+            // 1. Send header
+            if (send_all(connfd, &header, sizeof(PacketHeader)) == -1) {
+                cerr << "Server: Failed to send header" << endl;
+                goto cleanup;
+            }
+
+            // 2. Send pixel data
+            size_t data_size = (size_t)num_rows_in_batch * width * 3;
+            if (send_all(connfd, s2_flat_buffer, data_size) == -1) {
+                cerr << "Server: Failed to send pixel data" << endl;
+                goto cleanup;
+            }
+        } // end batch loop
+    } // end run loop
+
+    stop_total = chrono::steady_clock::now();
+    total_time = stop_total - start_total;
+    cout << "Server: All data sent. Total time: " << total_time.count() << "s" << endl;
+
+cleanup:
+    // Clean up
+    close(connfd);
+    delete_image(g_input_image);
+    delete[] s1_flat_buffer;
+    delete[] s2_flat_buffer;
+    return 0;
+}
