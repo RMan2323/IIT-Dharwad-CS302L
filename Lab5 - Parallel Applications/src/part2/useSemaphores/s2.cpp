@@ -1,186 +1,188 @@
 #include <iostream>
-#include "libppm.h"
-#include "config.h"
-#include <cstdint>
+#include <cstring>
+#include <cmath>
 #include <chrono>
 #include <iomanip>
 #include <sys/mman.h>
 #include <semaphore.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <string.h>
+#include <stdlib.h>
+#include "libppm.h"
+#include "config.h"
 
 using namespace std;
 
 uint32_t hsh(const uint8_t v[3]){
-	uint32_t x = (v[0] << 16) | (v[1] << 8) | v[2];
-	x ^= (x >> 13);
-	x *= 0x85ebca6b;
-	x ^= (x >> 16);
-	
-	return x;
+    uint32_t x = (v[0] << 16) | (v[1] << 8) | v[2];
+    x ^= (x >> 13);
+    x *= 0x85ebca6b;
+    x ^= (x >> 16);
+    return x;
 }
 
-struct Data{
-    uint32_t h[NUM_PIX];
-    uint8_t pixel[NUM_PIX][3];
-    int writeIdx = 0, readIdx = 0;
-    int64_t start_time_ns;
-};
+uint32_t calculate_batch_hash(const uint8_t* buffer, int num_rows, int width) {
+    uint32_t combined_hash = 0;
+    size_t total_pixels = (size_t)num_rows * width;
+    for (size_t i = 0; i < total_pixels; i++) {
+        combined_hash ^= hsh(&buffer[i * 3]);
+    }
+    return combined_hash;
+}
 
 int main(int argc, char **argv)
 {
-	if(argc != 2)
-	{
-		cout << "usage: ./a.out <path-to-original-image>\n\n";
-		exit(0);
-	}
-
-    //open shared memory file of incoming pixels
-    int shm_fd = shm_open(SHM_NAME, O_RDWR, 0666);
-    if (shm_fd == -1) {
-        perror("shm_open");
-        return 1;
+    if(argc != 2) {
+        cout << "usage: ./part2_3_s2.out <path-to-original-image>\n";
+        exit(1);
     }
 
-    //map the shared memory of incoming pixels
-    struct Data *ptr = (struct Data*) mmap(NULL, sizeof(struct Data), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    if (ptr == MAP_FAILED) {
-        perror("mmap");
-        return 1;
-    }
+    // --- Input SHM/Sem (From S1) ---
+    int shm_in_fd = shm_open(SHM_NAME, O_RDWR, 0666);
+    if (shm_in_fd == -1) { perror("shm_open (in)"); exit(1); }
+    struct SharedData *ptr_in = (struct SharedData*) mmap(NULL, sizeof(struct SharedData), PROT_READ | PROT_WRITE, MAP_SHARED, shm_in_fd, 0);
+    if (ptr_in == MAP_FAILED) { perror("mmap (in)"); exit(1); }
 
-    //open semaphores of incoming pixels
-    sem_t* sem_full = sem_open(SEM_FULL, 0);
-    sem_t* sem_empty = sem_open(SEM_EMPTY, 0);
-    sem_t* sem_lock = sem_open(SEM_MUTEX, 0);
+    sem_t* sem_full_in = sem_open(SEM_FULL, 0);
+    sem_t* sem_empty_in = sem_open(SEM_EMPTY, 0);
+    sem_t* sem_lock_in = sem_open(SEM_MUTEX, 0);
+    sem_t* sem_time_in = sem_open(SEM_TIME, 0);
 
-    //remove the shm if it exists
+    // --- Output SHM/Sem (To S3) ---
     shm_unlink(SHM_NAME_2);
-
-    //open shared memory file for sending pixels
-    int shm2_fd = shm_open(SHM_NAME_2, O_CREAT | O_RDWR, 0666);
-    if (shm2_fd == -1) {
-        perror("shm2_open");
-        return 1;
-    }
-
-    //set size of the shared memory for sending pixels
-    if (ftruncate(shm2_fd, sizeof(struct Data)) == -1) {
-        perror("ftruncate");
-        return 1;
-    }
-
-    //map the shared memory for sending pixels
-    struct Data *ptr2 = (struct Data*) mmap(NULL, sizeof(struct Data), PROT_READ | PROT_WRITE, MAP_SHARED, shm2_fd, 0);
-    if (ptr2 == MAP_FAILED) {
-        perror("mmap");
-        return 1;
-    }
-
-    //remove the semaphores if they exist
     sem_unlink(SEM_FULL_2);
     sem_unlink(SEM_MUTEX_2);
     sem_unlink(SEM_EMPTY_2);
     sem_unlink(SEM_TIME_2);
 
-    //open semaphores for sending pixels
-    sem_t* sem2_full = sem_open(SEM_FULL_2, O_CREAT, 0666, 0);
-    sem_t* sem2_empty = sem_open(SEM_EMPTY_2, O_CREAT, 0666, NUM_PIX);
-    sem_t* sem2_lock = sem_open(SEM_MUTEX_2, O_CREAT, 0666, 1);
-    sem_t* sem2_time = sem_open(SEM_TIME_2, O_CREAT, 0666, 0);
+    int shm_out_fd = shm_open(SHM_NAME_2, O_CREAT | O_RDWR, 0666);
+    if (shm_out_fd == -1) { perror("shm_open (out)"); exit(1); }
+    if (ftruncate(shm_out_fd, sizeof(struct SharedData)) == -1) { perror("ftruncate (out)"); exit(1); }
+    struct SharedData *ptr_out = (struct SharedData*) mmap(NULL, sizeof(struct SharedData), PROT_READ | PROT_WRITE, MAP_SHARED, shm_out_fd, 0);
+    if (ptr_out == MAP_FAILED) { perror("mmap (out)"); exit(1); }
 
-    sem_t* sem_time = sem_open(SEM_TIME, 0);
-    if (sem_time == SEM_FAILED) {
-        perror("sem_open(SEM_TIME) in s2");
-        return 1;
+    sem_t* sem_full_out = sem_open(SEM_FULL_2, O_CREAT, 0666, 0);
+    sem_t* sem_empty_out = sem_open(SEM_EMPTY_2, O_CREAT, 0666, BUFFER_SLOTS);
+    sem_t* sem_lock_out = sem_open(SEM_MUTEX_2, O_CREAT, 0666, 1);
+    sem_t* sem_time_out = sem_open(SEM_TIME_2, O_CREAT, 0666, 0);
+
+    // --- Pass Timer ---
+    sem_wait(sem_time_in);
+    ptr_out->start_time_ns = ptr_in->start_time_ns;
+    sem_post(sem_time_in); // Post again in case S3 is slow
+    sem_post(sem_time_out);
+    
+    ptr_out->writeIdx = 0;
+    ptr_out->readIdx = 0;
+
+    // --- Read Image ---
+    struct image_t *input_image = read_ppm_file(argv[1]);
+    if (input_image == nullptr) {
+        cerr << "S2: Failed to read image " << argv[1] << endl;
+        exit(1);
+    }
+    int height = input_image->height;
+    int width = input_image->width;
+
+    // --- Local Buffers ---
+    size_t max_batch_bytes = (size_t)CHUNK_ROWS_N * width * 3;
+    uint8_t* s1_flat_buffer = new uint8_t[max_batch_bytes];
+    uint8_t* s2_flat_buffer = new uint8_t[max_batch_bytes];
+
+    long long total_rows_to_process = (long long)NUM_RUNS * height;
+    long long rows_processed = 0;
+    long long s2_expected_run = 0;
+    long long s2_expected_row = 0;
+
+    cout << "S2: Started." << endl;
+
+    // --- Main Loop ---
+    while (rows_processed < total_rows_to_process) {
+        // --- Consume from S1 ---
+        sem_wait(sem_full_in);
+        sem_wait(sem_lock_in);
+
+        // Copy chunk from SHM
+        RowBatchChunk* in_chunk = &ptr_in->buffer[ptr_in->readIdx];
+        int run_id = in_chunk->run_id;
+        int start_row = in_chunk->start_row;
+        int num_rows = in_chunk->num_rows;
+        uint32_t batch_hash = in_chunk->batch_hash;
+        size_t data_size = (size_t)num_rows * width * 3;
+        memcpy(s1_flat_buffer, in_chunk->batch_data, data_size);
+        
+        ptr_in->readIdx = (ptr_in->readIdx + 1) % BUFFER_SLOTS;
+
+        sem_post(sem_lock_in);
+        sem_post(sem_empty_in);
+
+        // --- Verification (S1 -> S2) ---
+        if (run_id != s2_expected_run || start_row != s2_expected_row) {
+            cerr << "[FATAL] S1->S2 ORDER MISMATCH!" << endl; exit(EXIT_FAILURE);
+        }
+        s2_expected_row += num_rows;
+        if (s2_expected_row >= height) { s2_expected_row = 0; s2_expected_run++; }
+        
+        uint32_t received_hash = calculate_batch_hash(s1_flat_buffer, num_rows, width);
+        if (received_hash != batch_hash) {
+            cerr << "[FATAL] S1->S2 HASH MISMATCH!" << endl; exit(EXIT_FAILURE);
+        }
+
+        // --- S2 Logic ---
+        for (int k = 0; k < num_rows; k++) {
+            int current_row = start_row + k;
+            for (int j = 0; j < width; j++) {
+                uint8_t* s1_pixel = &s1_flat_buffer[(k * width + j) * 3];
+                uint8_t* s2_pixel = &s2_flat_buffer[(k * width + j) * 3];
+
+                if (current_row == 0 || current_row == height - 1 || j == 0 || j == width - 1) {
+                    memset(s2_pixel, 0, 3);
+                } else {
+                    for (int c = 0; c < 3; c++) {
+                        short res = (short)input_image->image_pixels[current_row][j][c] - (short)s1_pixel[c];
+                        s2_pixel[c] = (res < 0) ? 0 : (uint8_t)res;
+                    }
+                }
+            }
+        }
+
+        // --- Produce to S3 ---
+        sem_wait(sem_empty_out);
+        sem_wait(sem_lock_out);
+
+        RowBatchChunk* out_chunk = &ptr_out->buffer[ptr_out->writeIdx];
+        out_chunk->run_id = run_id;
+        out_chunk->start_row = start_row;
+        out_chunk->num_rows = num_rows;
+        out_chunk->width = width;
+        out_chunk->batch_hash = calculate_batch_hash(s2_flat_buffer, num_rows, width);
+        memcpy(out_chunk->batch_data, s2_flat_buffer, data_size);
+
+        ptr_out->writeIdx = (ptr_out->writeIdx + 1) % BUFFER_SLOTS;
+
+        sem_post(sem_lock_out);
+        sem_post(sem_full_out);
+
+        rows_processed += num_rows;
     }
 
-    // wait for s1 to post the time
-    if (sem_wait(sem_time) != 0) {
-        perror("sem_wait(SEM_TIME) in s2");
-        sem_close(sem_time);
-        return 1;
-    }
+    cout << "S2: Finished processing." << endl;
 
-    //copy timestamp from incoming shared memory to outgoing shared memory
-    ptr2->start_time_ns = ptr->start_time_ns;
-
-    //allow the s3 to proceed
-    if (sem_post(sem2_time) != 0) {
-        perror("sem_post(SEM_TIME) in s2");
-    }
-    sem_close(sem_time);
-
-	struct image_t *input_image = read_ppm_file(argv[1]);
-
-    uint8_t incomingPixel[3], outgoingPixel[3];
-    uint32_t incomingH, outgoingH;
-
-    uint8_t result = 0;
-
-    int count = 0;
-    while(count < NUM_REPEATS){
-    count++;
-	for(int i = 0; i < (input_image->height); i++)
-	{
-		for(int j = 0; j < (input_image->width); j++)
-		{
-            sem_wait(sem_full);  //wait a write
-            sem_wait(sem_lock);  //lock critical section
-            memcpy(&incomingH, &ptr->h[ptr->readIdx], sizeof(uint32_t));
-            memcpy(incomingPixel, &ptr->pixel[ptr->readIdx], sizeof(incomingPixel));
-            ptr->readIdx = (ptr->readIdx+1)%NUM_PIX;
-            sem_post(sem_lock);  //unlock critical section
-            sem_post(sem_empty);  //indicate that data has been read
-
-            if(hsh(incomingPixel) != incomingH){
-				perror("s1s2 hash mismatch");
-				//cout << hsh(incomingPixel) << " " << incomingH << "\n";
-				exit(EXIT_FAILURE);
-			}
-
-            // cout << "S2: Received pixel [" << i << ", " << j << "]: " << static_cast<int>(incomingPixel[0]) << " " << static_cast<int>(incomingPixel[1]) << " " << static_cast<int>(incomingPixel[2]) << "\n";
-
-			for(int k = 0; k < 3; k++)
-			{
-                if(i == 0 || i == input_image->height-1 || j == 0 || j == input_image->width-1){
-					outgoingPixel[k] = 0;
-					continue;
-				}
-
-				short res = input_image->image_pixels[i][j][k] - incomingPixel[k];
-				if(res < 0) outgoingPixel[k] = 0;
-				else outgoingPixel[k] = res;
-			}
-            outgoingH = hsh(outgoingPixel);
-
-            sem_wait(sem2_empty);  //wait for empty slot
-            sem_wait(sem2_lock);  //lock critical section
-            memcpy(&ptr2->h[ptr2->writeIdx], &outgoingH, sizeof(uint32_t));
-            memcpy(&ptr2->pixel[ptr2->writeIdx], outgoingPixel, sizeof(outgoingPixel));
-            ptr2->writeIdx = (ptr2->writeIdx+1)%NUM_PIX;
-            sem_post(sem2_lock);  //unlock critical section
-            sem_post(sem2_full);  //indicate that data has been written
-
-            // cout << "S2: Sent pixel [" << i << ", " << j <<"]: " << static_cast<int>(outgoingPixel[0]) << " " << static_cast<int>(outgoingPixel[1]) << " " << static_cast<int>(outgoingPixel[2]) << "\n";
-		}
-	}
-    }
-
-    sem_unlink(SEM_FULL);
-    sem_unlink(SEM_EMPTY);
-    sem_unlink(SEM_MUTEX);
-
-    munmap(ptr, sizeof(struct Data));
-    shm_unlink(SHM_NAME);
-
-    sem_unlink(SEM_FULL_2);
-    sem_unlink(SEM_EMPTY_2);
-    sem_unlink(SEM_MUTEX_2);
-
-    munmap(ptr2, sizeof(struct Data));
-    shm_unlink(SHM_NAME_2);
-	
-	return 0;
+    // Cleanup
+    delete[] s1_flat_buffer;
+    delete[] s2_flat_buffer;
+    sem_close(sem_full_in);
+    sem_close(sem_empty_in);
+    sem_close(sem_lock_in);
+    sem_close(sem_time_in);
+    sem_close(sem_full_out);
+    sem_close(sem_empty_out);
+    sem_close(sem_lock_out);
+    sem_close(sem_time_out);
+    munmap(ptr_in, sizeof(struct SharedData));
+    munmap(ptr_out, sizeof(struct SharedData));
+    close(shm_in_fd);
+    close(shm_out_fd);
+    
+    return 0;
 }
