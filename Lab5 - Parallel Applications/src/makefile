@@ -9,8 +9,8 @@ part1: ./part1.out
 part2_1: ./part2_1.out
 	./part2_1.out ./1.ppm ./output_part2_1.ppm
 
-./part2_1.out: ./part2/usePipes/image_sharpener.cpp ./part2/usePipes/libppm.cpp
-	g++ ./part2/usePipes/image_sharpener.cpp ./part2/usePipes/libppm.cpp -o part2_1.out
+./part2_1.out: ./part2/usePipes/img_shrp_pipes.cpp ./part2/usePipes/libppm.cpp
+	g++ ./part2/usePipes/img_shrp_pipes.cpp ./part2/usePipes/libppm.cpp -o part2_1.out
 
 part2_2: ./part2_2.out
 	./part2_2.out ./1.ppm ./output_part2_2.ppm
