@@ -13,6 +13,7 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <stdlib.h> // For exit, EXIT_FAILURE
 
 using namespace std;
 
@@ -43,7 +44,6 @@ uint32_t hsh(const uint8_t v[3]){
 }
 
 // Calculates hash for a flat buffer of pixel data
-// --- FIX: This function now skips borders, matching part2_1.cpp ---
 uint32_t calculate_batch_hash(const uint8_t* buffer, int start_row, int num_rows, int width, int img_height) {
     uint32_t combined_hash = 0;
     for (int i = 0; i < num_rows; i++) {
@@ -156,8 +156,19 @@ int main(int argc, char **argv) {
     string input_path = argv[1];
     const char *port = argv[2];
 
+    // --- Declarations moved up ---
+    auto start_read = chrono::steady_clock::now();
+    chrono::duration<double> read_time{0};
+    auto start_total = chrono::steady_clock::now();
+    chrono::steady_clock::time_point stop_total;
+    chrono::duration<double> total_time{0};
+
     // Read input image
+    start_read = chrono::steady_clock::now();
     g_input_image = read_ppm_file(const_cast<char*>(input_path.c_str()));
+    auto stop_read = chrono::steady_clock::now();
+    read_time = stop_read - start_read;
+
     if (g_input_image == nullptr) {
         cerr << "Failed to read input image: " << input_path << endl;
         return 1;
@@ -175,17 +186,12 @@ int main(int argc, char **argv) {
     }
 
     // Allocate flat buffers for processing
-    // We only need N rows at a time
     int max_batch_pixels = CHUNK_ROWS_N * width;
     uint8_t* s1_flat_buffer = new uint8_t[max_batch_pixels * 3];
     uint8_t* s2_flat_buffer = new uint8_t[max_batch_pixels * 3];
 
     PacketHeader header;
-    auto start_total = chrono::steady_clock::now();
-
-    // --- FIX: Declare timing variables before goto-able scope ---
-    auto stop_total = start_total;
-    chrono::duration<double> total_time(0.0);
+    start_total = chrono::steady_clock::now();
 
     for (int run = 0; run < NUM_RUNS; run++) {
         for (int i = 0; i < height; i += CHUNK_ROWS_N) {
@@ -196,7 +202,12 @@ int main(int argc, char **argv) {
                 int current_row = i + k;
                 for (int j = 0; j < width; j++) {
                     uint8_t* s1_pixel = &s1_flat_buffer[(k * width + j) * 3];
-                    if (current_row > 0 && current_row < height - 1 && j > 0 && j < width - 1) {
+                    
+                    // --- FIX: Set borders to 0 ---
+                    if (current_row == 0 || current_row == height - 1 || j == 0 || j == width - 1) {
+                        memset(s1_pixel, 0, 3);
+                    } else {
+                        // Inner pixel logic
                         for (int c = 0; c < 3; c++) {
                             uint8_t result = 0;
                             for (int l = -1; l < 2; l++) {
@@ -206,9 +217,6 @@ int main(int argc, char **argv) {
                             }
                             s1_pixel[c] = result;
                         }
-                    } else {
-                        // FIX: Explicitly set border pixels to 0
-                        memset(s1_pixel, 0, 3);
                     }
                 }
             }
@@ -219,14 +227,16 @@ int main(int argc, char **argv) {
                 for (int j = 0; j < width; j++) {
                     uint8_t* s1_pixel = &s1_flat_buffer[(k * width + j) * 3];
                     uint8_t* s2_pixel = &s2_flat_buffer[(k * width + j) * 3];
-                    if (current_row > 0 && current_row < height - 1 && j > 0 && j < width - 1) {
+
+                    // --- FIX: Set borders to 0 ---
+                    if (current_row == 0 || current_row == height - 1 || j == 0 || j == width - 1) {
+                        memset(s2_pixel, 0, 3);
+                    } else {
+                        // Inner pixel logic
                         for (int c = 0; c < 3; c++) {
                             short res = (short)g_input_image->image_pixels[current_row][j][c] - (short)s1_pixel[c];
                             s2_pixel[c] = (res < 0) ? 0 : (uint8_t)res;
                         }
-                    } else {
-                        // FIX: Explicitly set border pixels to 0
-                        memset(s2_pixel, 0, 3);
                     }
                 }
             }
@@ -236,7 +246,6 @@ int main(int argc, char **argv) {
             header.start_row = i;
             header.num_rows = num_rows_in_batch;
             header.width = width;
-            // --- FIX: Pass correct arguments to new hash function ---
             header.batch_hash = calculate_batch_hash(s2_flat_buffer, i, num_rows_in_batch, width, height);
 
             // 1. Send header
@@ -256,7 +265,11 @@ int main(int argc, char **argv) {
 
     stop_total = chrono::steady_clock::now();
     total_time = stop_total - start_total;
-    cout << "Server: All data sent. Total time: " << total_time.count() << "s" << endl;
+    
+    cout << "\n--- Timing Report (Server) ---" << endl;
+    cout << "Read time:     " << setw(12) << read_time.count() << " s" << endl;
+    cout << "Server time:   " << setw(12) << total_time.count() << " s (for " << NUM_RUNS << " runs)" << endl;
+    cout << "Avg per run:   " << setw(12) << total_time.count() / NUM_RUNS * 1000 << " ms" << endl;
 
 cleanup:
     // Clean up
