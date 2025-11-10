@@ -15,8 +15,8 @@ part2_1: ./part2_1.out
 part2_2: ./part2_2.out
 	./part2_2.out ./1.ppm ./output_part2_2.ppm
 
-./part2_2.out: ./part2/useAtomics/image_sharpener.cpp ./part2/useAtomics/libppm.cpp
-	g++ ./part2/useAtomics/image_sharpener.cpp ./part2/useAtomics/libppm.cpp -o part2_2.out
+./part2_2.out: ./part2/useAtomics/img_shrp_atomics.cpp ./part2/useAtomics/libppm.cpp
+	g++ ./part2/useAtomics/img_shrp_atomics.cpp ./part2/useAtomics/libppm.cpp -o part2_2.out
 
 part2_3: ./part2_3.out
 	./part2_3.out ./1.ppm ./output_part2_3.ppm
@@ -30,4 +30,4 @@ get-times: ./getTimesOUT.sh
 	./getTimesOUT.sh
 
 clean:
-	rm a.out
+	rm part2_2.out
