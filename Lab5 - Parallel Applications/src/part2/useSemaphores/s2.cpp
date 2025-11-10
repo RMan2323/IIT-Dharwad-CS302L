@@ -25,6 +25,7 @@ struct Data{
     uint32_t h[NUM_PIX];
     uint8_t pixel[NUM_PIX][3];
     int writeIdx = 0, readIdx = 0;
+    int64_t start_time_ns;
 };
 
 int main(int argc, char **argv)
@@ -81,11 +82,35 @@ int main(int argc, char **argv)
     sem_unlink(SEM_FULL_2);
     sem_unlink(SEM_MUTEX_2);
     sem_unlink(SEM_EMPTY_2);
+    sem_unlink(SEM_TIME_2);
 
     //open semaphores for sending pixels
     sem_t* sem2_full = sem_open(SEM_FULL_2, O_CREAT, 0666, 0);
     sem_t* sem2_empty = sem_open(SEM_EMPTY_2, O_CREAT, 0666, NUM_PIX);
     sem_t* sem2_lock = sem_open(SEM_MUTEX_2, O_CREAT, 0666, 1);
+    sem_t* sem2_time = sem_open(SEM_TIME_2, O_CREAT, 0666, 0);
+
+    sem_t* sem_time = sem_open(SEM_TIME, 0);
+    if (sem_time == SEM_FAILED) {
+        perror("sem_open(SEM_TIME) in s2");
+        return 1;
+    }
+
+    // wait for s1 to post the time
+    if (sem_wait(sem_time) != 0) {
+        perror("sem_wait(SEM_TIME) in s2");
+        sem_close(sem_time);
+        return 1;
+    }
+
+    //copy timestamp from incoming shared memory to outgoing shared memory
+    ptr2->start_time_ns = ptr->start_time_ns;
+
+    //allow the s3 to proceed
+    if (sem_post(sem2_time) != 0) {
+        perror("sem_post(SEM_TIME) in s2");
+    }
+    sem_close(sem_time);
 
 	struct image_t *input_image = read_ppm_file(argv[1]);
 

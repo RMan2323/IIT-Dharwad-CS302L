@@ -5,7 +5,7 @@
 #include <iomanip>
 #include <unistd.h>
 
-#define NUM_REPEATS 100
+#define NUM_REPEATS 1000
 
 using namespace std;
 
@@ -184,6 +184,8 @@ int main(int argc, char **argv)
 	
 	struct image_t *input_image = read_ppm_file(argv[1]);  //read image
 
+	auto start = chrono::steady_clock::now();
+
 	pid_t s2pid = fork();
 	if(s2pid < 0){
 		perror("forking s2");
@@ -216,8 +218,11 @@ int main(int argc, char **argv)
 			
 			close(s2s3[0]);  //close read end of s2s3
 			write_ppm_file(argv[2], sharpened_image);  //write file
+			auto stop = chrono::steady_clock::now();
 			
-			
+			chrono::duration<double> t0 = stop-start;
+
+			cout << "Total time taken for " << NUM_REPEATS << " iterations is " << t0.count() << "\n";
 		}
 	}
 }

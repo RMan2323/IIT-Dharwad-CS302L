@@ -25,6 +25,7 @@ struct Data{
     uint32_t h[NUM_PIX];
     uint8_t pixel[NUM_PIX][3];
     int writeIdx = 0, readIdx = 0;
+	int64_t start_time_ns;
 };
 
 int main(int argc, char **argv)
@@ -53,6 +54,13 @@ int main(int argc, char **argv)
     sem_t* sem_full = sem_open(SEM_FULL_2, 0);
     sem_t* sem_empty = sem_open(SEM_EMPTY_2, 0);
     sem_t* sem_lock = sem_open(SEM_MUTEX_2, 0);
+	sem_t* sem_time = sem_open(SEM_TIME_2, 0);
+
+	sem_wait(sem_time);
+	auto start_time = chrono::steady_clock::time_point(chrono::nanoseconds(ptr->start_time_ns));
+	sem_post(sem_time);
+
+	sem_unlink(SEM_TIME_2);
 
 	struct image_t *input_image = read_ppm_file(argv[1]);
 
@@ -109,8 +117,14 @@ int main(int argc, char **argv)
 			}
 		}
 	}
-	cout << "Repeat " << count << " done\n";
+	// cout << "Repeat " << count << " done\n";
 	}
+
+	auto end = chrono::steady_clock::now();
+	auto timeTotal = end - start_time;
+	int timeSec = std::chrono::duration_cast<std::chrono::seconds>(timeTotal).count();
+
+	cout << "Time taken for " << NUM_REPEATS << " iterations is " << timeSec << "\n";
 
 	sem_unlink(SEM_FULL_2);
     sem_unlink(SEM_EMPTY_2);

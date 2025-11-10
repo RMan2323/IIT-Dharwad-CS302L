@@ -25,6 +25,7 @@ struct Data{
     uint32_t h[NUM_PIX];
     uint8_t pixel[NUM_PIX][3];
     int writeIdx = 0, readIdx = 0;
+    int64_t start_time_ns;
 };
 
 int main(int argc, char **argv)
@@ -66,11 +67,13 @@ int main(int argc, char **argv)
     sem_unlink(SEM_FULL);
     sem_unlink(SEM_MUTEX);
     sem_unlink(SEM_EMPTY);
+    sem_unlink(SEM_TIME);
 
     //open semaphores
     sem_t* sem_full = sem_open(SEM_FULL, O_CREAT | O_EXCL, 0666, 0);
     sem_t* sem_empty = sem_open(SEM_EMPTY, O_CREAT | O_EXCL, 0666, NUM_PIX);
     sem_t* sem_lock = sem_open(SEM_MUTEX, O_CREAT | O_EXCL, 0666, 1);
+    sem_t* sem_time = sem_open(SEM_TIME, O_CREAT | O_EXCL, 0666, 0);
 
     // cout << "S1: Sems opened\n";
 
@@ -78,6 +81,11 @@ int main(int argc, char **argv)
 
     uint8_t pixel[3];
     uint32_t h;
+
+    auto start = chrono::steady_clock::now();
+    ptr->start_time_ns = chrono::duration_cast<chrono::nanoseconds>(start.time_since_epoch()).count();
+
+    sem_post(sem_time);  //signal that time has been posted
 
     uint8_t result = 0;
     int count = 0;
@@ -128,6 +136,7 @@ int main(int argc, char **argv)
     sem_unlink(SEM_FULL);
     sem_unlink(SEM_EMPTY);
     sem_unlink(SEM_MUTEX);
+    sem_unlink(SEM_TIME);
 
     munmap(ptr, sizeof(struct Data));
     shm_unlink(SHM_NAME);

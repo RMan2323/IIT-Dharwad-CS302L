@@ -22,12 +22,21 @@ part2_2: ./part2_2.out
 	# Added -pthread, which is required for img_shrp_atomics.cpp
 	g++ ./part2/useAtomics/img_shrp_atomics.cpp ./part2/useAtomics/libppm.cpp -o part2_2.out -pthread
 
-# --- Part 2 (Semaphores) ---
-part2_3: ./part2_3.out
-	./part2_3.out ./1.ppm ./output_part2_3.ppm
+part2_3: ./part2_3_s1.out ./part2_3_s2.out ./part2_3_s3.out
+	./part2_3_s1.out ./1.ppm &
+	@sleep 0.1
+	./part2_3_s2.out ./1.ppm &
+	@sleep 0.1
+	./part2_3_s3.out ./1.ppm ./output_part2_3.ppm
 
-./part2_3.out: ./part2/useSemaphores/image_sharpener.cpp ./part2/useSemaphores/libppm.cpp
-	g++ ./part2/useSemaphores/image_sharpener.cpp ./part2/useSemaphores/libppm.cpp -o part2_3.out
+./part2_3_s1.out: ./part2/useSemaphores/s1.cpp ./part2/useSemaphores/libppm.cpp ./part2/useSemaphores/libppm.h ./part2/useSemaphores/config.h
+	g++ ./part2/useSemaphores/s1.cpp ./part2/useSemaphores/libppm.cpp -o part2_3_s1.out
+
+./part2_3_s2.out: ./part2/useSemaphores/s2.cpp ./part2/useSemaphores/libppm.cpp ./part2/useSemaphores/libppm.h ./part2/useSemaphores/config.h
+	g++ ./part2/useSemaphores/s2.cpp ./part2/useSemaphores/libppm.cpp -o part2_3_s2.out
+
+./part2_3_s3.out: ./part2/useSemaphores/s3.cpp ./part2/useSemaphores/libppm.cpp ./part2/useSemaphores/libppm.h ./part2/useSemaphores/config.h
+	g++ ./part2/useSemaphores/s3.cpp ./part2/useSemaphores/libppm.cpp -o part2_3_s3.out
 
 # --- Part 3 ---
 # Scenario 1 (A: S1+S2, B: S3)
